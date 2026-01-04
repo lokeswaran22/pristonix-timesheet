@@ -147,7 +147,7 @@ async function initDb() {
 
         // Create default users
         const adminUsername = 'admin@pristonix';
-        const adminPassword = '!pristonixadmin@2025';
+        const adminPassword = '!pristonixadmin#@2026';
         const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
         await query(`

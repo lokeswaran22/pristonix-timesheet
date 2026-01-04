@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const xlsx = require('xlsx');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -212,6 +213,19 @@ async function initDb() {
             )
         `);
 
+        // 8. Password Resets Table
+        await run(`
+            CREATE TABLE IF NOT EXISTS password_resets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                userId INTEGER,
+                token TEXT NOT NULL,
+                expiresAt TEXT NOT NULL,
+                used INTEGER DEFAULT 0,
+                createdAt TEXT,
+                FOREIGN KEY(userId) REFERENCES users(id)
+            )
+        `);
+
         // Indexes for performance
         await run(`CREATE INDEX IF NOT EXISTS idx_hist_user ON activity_history(user_id)`);
         await run(`CREATE INDEX IF NOT EXISTS idx_hist_date ON activity_history(date_key)`);
@@ -270,6 +284,73 @@ async function initDb() {
 // ==========================================
 // API ROUTES
 // ==========================================
+
+// Forgot Password Endpoint
+app.post('/api/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email/Username is required' });
+
+    try {
+        // Allow login by Username OR Email
+        const user = await get("SELECT * FROM users WHERE username = ? OR email = ?", [email, email]);
+        if (!user) {
+            // Security: Don't reveal if user exists
+            return res.json({ message: 'If an account exists, a reset link has been sent.' });
+        }
+
+        // Generate Token
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 3600000).toISOString(); // 1 hour
+
+        await run(
+            'INSERT INTO password_resets (userId, token, expiresAt, createdAt) VALUES (?, ?, ?, ?)',
+            [user.id, token, expiresAt, new Date().toISOString()]
+        );
+
+        // MOCK EMAIL SENDING
+        const resetLink = `http://${req.headers.host}/reset-password.html?token=${token}`;
+        console.log('\n==================================================');
+        console.log(`🔐  PASSWORD RESET REQUEST FOR: ${user.username}`);
+        console.log(`🔗  RESET LINK: ${resetLink}`);
+        console.log('==================================================\n');
+
+        res.json({ message: 'Password reset link has been sent to your email (Check Server Console).' });
+
+    } catch (err) {
+        console.error('Forgot Password Error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Reset Password Endpoint
+app.post('/api/reset-password', async (req, res) => {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) return res.status(400).json({ error: 'Missing token or password' });
+
+    try {
+        const resetRecord = await get(
+            "SELECT * FROM password_resets WHERE token = ? AND used = 0 AND expiresAt > ?",
+            [token, new Date().toISOString()]
+        );
+
+        if (!resetRecord) {
+            return res.status(400).json({ error: 'Invalid or expired reset token' });
+        }
+
+        // Update Password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+        await run("UPDATE users SET password = ? WHERE id = ?", [hashedPassword, resetRecord.userId]);
+
+        // Mark Token Used
+        await run("UPDATE password_resets SET used = 1 WHERE id = ?", [resetRecord.id]);
+
+        res.json({ success: true, message: 'Password has been successfully updated.' });
+
+    } catch (err) {
+        console.error('Reset Password Error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
 
 // Login
 app.post('/api/login', async (req, res) => {

@@ -67,7 +67,7 @@ This guide will help you deploy your Timesheet Application to Render with a Post
 ## 7. Admin Access
 - **Default Admin User**:
   - **Username**: `admin@pristonix`
-  - **Password**: `!pristonixadmin@2025`
+  - **Password**: `!pristonixadmin#@2026`
 - **Admin Panel PIN**: `2025`
 
 ## 8. View Your Database

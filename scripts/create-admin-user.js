@@ -27,7 +27,7 @@ async function createAdminUser() {
             console.log('👤 Admin user already exists. Resetting password...');
 
             // Reset password
-            const adminPassword = '!pristonixadmin@2025';
+            const adminPassword = '!pristonixadmin#@2026';
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
             await pool.query(
@@ -41,7 +41,7 @@ async function createAdminUser() {
 
             // Create new admin user
             const adminUsername = 'admin@pristonix';
-            const adminPassword = '!pristonixadmin@2025';
+            const adminPassword = '!pristonixadmin#@2026';
             const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
             await pool.query(`
@@ -56,7 +56,7 @@ async function createAdminUser() {
         console.log('\n🔐 Admin Login Credentials:');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('Username: admin@pristonix');
-        console.log('Password: !pristonixadmin@2025');
+        console.log('Password: !pristonixadmin#@2026');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
         // Verify the user was created/updated

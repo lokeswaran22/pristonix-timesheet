@@ -25,24 +25,65 @@ body {
     padding: 1rem;
     margin: 0;
     font-family: 'Inter', sans-serif;
-    background: #0a0f1d; /* Fallback dark background */
+    background: #0a0f1d;
     overflow: hidden;
 }
 
-/* 2. Glassmorphism Card */
+#login-bg-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+    background: #000;
+}
+
+.login-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+}
+
+/* Hide split screen specific elements or style them to not interfere */
+.login-left,
+.login-right {
+    display: none;
+}
+
+/* Re-enable and style the centered card if checking structure provided earlier */
+/* But since HTML structure changed to .login-left/.login-right wrapper, we need to hide them or reset them if we can't change HTML yet. */
+/* Wait, I should probably update the CSS to Handle the CURRENT HTML structure (.login-left/.login-right) and force it to look centered. */
+
+.login-left {
+    display: none;
+    /* Hide the left branding panel */
+}
+
+.login-right {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+}
+
+/* 2. Glassmorphism Card RESTORED */
 .login-card {
-    background: rgba(255, 255, 255, 0.9);
-    /* High opacity for readability */
+    background: rgba(255, 255, 255, 0.85);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 24px;
-    padding: 3.5rem;
+    padding: 3rem;
     width: 100%;
-    max-width: 480px;
-    box-shadow:
-        0 25px 50px -12px rgba(0, 0, 0, 0.5),
-        0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    max-width: 440px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     position: relative;
     transform: translateY(0);
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -51,6 +92,33 @@ body {
 .login-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 35px 60px -15px rgba(0, 0, 0, 0.6);
+}
+
+.brand-overlay {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 2rem;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-align: center;
+    max-width: 400px;
+}
+
+.brand-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5rem;
+    margin: 0;
+    background: linear-gradient(135deg, #fff 0%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.brand-tagline {
+    font-size: 1.1rem;
+    color: #cbd5e1;
+    margin-top: 1rem;
+    font-weight: 300;
+    letter-spacing: 0.5px;
 }
 
 /* 3. Header & Typography */
@@ -246,59 +314,75 @@ body.admin-mode .btn-primary:hover {
 /* ==========================================
    MOBILE RESPONSIVE - LOGIN PAGE
    ========================================== */
-@media (max-width: 480px) {
-    body {
-        padding: 0.5rem;
-    }
-
-    .login-card {
-        padding: 2rem 1.5rem;
-        border-radius: 16px;
-    }
-
-    .login-title {
-        font-size: 1.75rem;
-    }
-
-    .login-subtitle {
-        font-size: 0.9rem;
-    }
-
-    .role-tabs {
-        margin-bottom: 1.5rem;
-    }
-
-    .role-tab {
-        padding: 10px;
-        font-size: 0.85rem;
-    }
-
-    .form-group label {
-        font-size: 0.85rem;
-    }
-
-    .form-input {
-        padding: 0.875rem 1rem;
-        font-size: 0.95rem;
-    }
-
-    .btn-primary {
-        padding: 0.875rem;
-        font-size: 0.95rem;
-    }
-
-    .login-logo img {
-        width: 60px;
-        height: 60px;
-    }
-
-    .login-footer {
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-    }
+.login-container {
+    flex-direction: column;
 }
+
+#login-bg-container,
+.login-left {
+    width: 100%;
+    height: 35vh;
+    position: absolute;
+    top: 0;
+}
+
+.login-right {
+    width: 100%;
+    height: 65vh;
+    margin-top: 35vh;
+    border-radius: 24px 24px 0 0;
+    align-items: flex-start;
+    padding-top: 2rem;
+}
+
+.login-card {
+    padding: 1.5rem;
+}
+
+.login-title {
+    font-size: 1.75rem;
+}
+
+.login-subtitle {
+    font-size: 0.9rem;
+}
+
+.role-tabs {
+    margin-bottom: 1.5rem;
+}
+
+.role-tab {
+    padding: 10px;
+    font-size: 0.85rem;
+}
+
+.form-group label {
+    font-size: 0.85rem;
+}
+
+.form-input {
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+}
+
+.btn-primary {
+    padding: 0.875rem;
+    font-size: 0.95rem;
+}
+
+.login-logo img {
+    width: 60px;
+    height: 60px;
+}
+
+.login-footer {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+}
+}
+
 .ribbons-container {
-  width: 100%;
-  height: 100%;
-  position: relative;
+    width: 100%;
+    height: 100%;
+    position: relative;
 }

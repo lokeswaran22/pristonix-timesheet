@@ -68,6 +68,6 @@ CREATE TABLE IF NOT EXISTS activity_log (
     createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Default Admin User (Password: !pristonixadmin@2025)
+-- Default Admin User (Password: !pristonixadmin#@2026)
 -- Note: Password should be hashed using bcrypt in the application. 
 -- This SQL just shows the intent. The application handles the actual insertion with hashing.

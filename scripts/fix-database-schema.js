@@ -163,7 +163,7 @@ async function fixDatabaseSchema() {
         // Create admin user
         console.log('👤 Creating admin user...');
         const adminUsername = 'admin@pristonix';
-        const adminPassword = '!pristonixadmin@2025';
+        const adminPassword = '!pristonixadmin#@2026';
         const hashedPassword = await bcrypt.hash(adminPassword, 10);
 
         await client.query(`
@@ -187,7 +187,7 @@ async function fixDatabaseSchema() {
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
         console.log('Admin:');
         console.log('  Username: admin@pristonix');
-        console.log('  Password: !pristonixadmin@2025');
+        console.log('  Password: !pristonixadmin#@2026');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
         client.release();

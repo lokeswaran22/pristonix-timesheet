@@ -69,9 +69,7 @@
                 </div>
             </div>
 
-            <div style="margin-bottom: 25px;">
-                <a href="#" class="forgot-password" id="forgotPasswordLink">Forgot Password?</a>
-            </div>
+
 
             <button type="submit" class="btn btn-primary" id="loginBtn" style="width: 100%; justify-content: center;">
                 Login as Employee
@@ -83,7 +81,8 @@
         </div>
     </div>
 
-    <!-- Forgot Password Modal (Simple Alert for implementation simplicity) -->
+    <!-- Forgot Password Modal -->
+
 
     <script src="js/auth-check.js"></script>
     <script>
@@ -248,11 +247,7 @@
             }
         });
 
-        // Forgot Password Logic
-        document.getElementById('forgotPasswordLink')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            alert('Please contact your administrator to reset your password.\n\nAdmin Email: admin@pristonix.com');
-        });
+
     </script>
     <script type="module">
         import * as OGL from 'https://unpkg.com/ogl';
