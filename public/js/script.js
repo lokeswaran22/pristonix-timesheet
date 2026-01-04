@@ -68,7 +68,8 @@ class TimesheetManager {
         const isManagement = isAdmin;
 
         // Check for restricted "Guest" admin accounts
-        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username === 'guest@pristonix');
+        // Check for restricted "Guest" admin accounts or explicit guest usernames
+        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username.toLowerCase().includes('guest'));
 
         console.log(`Role UI Update: Role=${role}, User=${this.currentUser.username}, Restricted=${isRestrictedAdmin}`);
 
@@ -113,11 +114,10 @@ class TimesheetManager {
         const adminQuickActions = document.getElementById('adminQuickActions');
         if (adminQuickActions) adminQuickActions.style.display = (isAdmin && !isRestrictedAdmin) ? 'flex' : 'none';
 
-        // Analytics Sidebar / Recent Changes - Show for Everyone (Filtered for Employees)
+        // Analytics Sidebar / Recent Changes - Admin Only
         const analyticsSection = document.getElementById('adminAnalyticsSection');
         if (analyticsSection) {
-            // RESTORED: Visible for all, content filtered by ActivityTracker based on role
-            analyticsSection.style.display = 'block';
+            analyticsSection.style.display = (isAdmin) ? 'block' : 'none';
         }
 
         // Hide "Audit Log" button for non-admins and restricted admins
@@ -376,7 +376,7 @@ class TimesheetManager {
         const role = this.currentUser.role;
         const isAdmin = role === 'admin';
         const isManagement = isAdmin;
-        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username === 'guest@pristonix');
+        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username.toLowerCase().includes('guest'));
 
         // Hide Actions column header for restricted admins
         const actionsHeader = document.querySelector('.timesheet-table thead th:last-child');
@@ -500,7 +500,7 @@ class TimesheetManager {
             }
 
             // Actions (Admin Only - Not for restricted admins)
-            const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username === 'guest@pristonix');
+            const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username.toLowerCase().includes('guest'));
 
             if (isManagement && !isRestrictedAdmin) {
                 const actionTd = document.createElement('td');
@@ -2051,21 +2051,35 @@ class TimesheetManager {
         }
 
         const name = document.getElementById('employeeName').value.trim();
-        const username = document.getElementById('employeeUsername').value.trim();
+        let username = document.getElementById('employeeUsername').value.trim();
         const password = document.getElementById('employeePassword').value.trim();
-        const role = document.getElementById('employeeRole').value;
+        let role = document.getElementById('employeeRole').value;
+        const email = document.getElementById('employeeEmail') ? document.getElementById('employeeEmail').value.trim() : '';
 
-        if (!name || !username || !password) {
-            this.showStatus('Please fill in all required fields', 'error');
+        if (!name || !username) {
+            this.showStatus('Please fill in Name and Username', 'error');
             return;
+        }
+
+        // Guest Role Handling
+        if (role === 'guest') {
+            role = 'admin'; // Must be admin to see the main timesheet
+            if (!username.toLowerCase().includes('guest')) {
+                this.showStatus('Guest username must contain "guest" (e.g. guest_user)', 'error');
+                return;
+            }
         }
 
         if (this.editingUserId) {
             // Update existing employee
-            await this.updateEmployee(this.editingUserId, name, username, password, role);
+            await this.updateEmployee(this.editingUserId, name, username, password, role, email);
         } else {
+            if (!password) {
+                this.showStatus('Password is required for new users', 'error');
+                return;
+            }
             // Add new employee
-            await this.addEmployee(name, username, password, role);
+            await this.addEmployee(name, username, password, role, email);
         }
 
         this.closeEmployeeModal();

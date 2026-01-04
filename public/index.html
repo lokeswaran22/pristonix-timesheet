@@ -168,8 +168,9 @@
                 </div>
             </div>
 
-            <!-- Activity Tracker - Separate Section -->
-            <div class="activity-tracker-card" id="adminAnalyticsSection">
+
+            <!-- Activity Tracker - Separate Section (Restored & restricted to Admin) -->
+            <div class="activity-tracker-card" id="adminAnalyticsSection" style="display: none;">
                 <div class="activity-tracker-header">
                     <div class="activity-tracker-title">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -180,21 +181,24 @@
                         </svg>
                         <h3 id="recentChangesHeader">Recent Changes</h3>
                     </div>
-                    <div id="adminAnalyticsControls" style="margin-left: auto; display: flex; gap: 0.5rem;">
-                        <a href="history.html" class="btn btn-sm btn-secondary"
-                            style="text-decoration:none; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                                stroke-width="2">
-                                <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path>
-                            </svg>
-                            Audit Log
-                        </a>
-                    </div>
                 </div>
                 <div class="activity-tracker-list" id="activityTrackerList">
                     <!-- Tracker items will be injected here -->
                 </div>
             </div>
+
+            <script>
+                // Show Recent Changes only for Admin
+                document.addEventListener('DOMContentLoaded', () => {
+                    try {
+                        const user = JSON.parse(localStorage.getItem('currentUser'));
+                        if (user && user.role === 'admin') {
+                            const section = document.getElementById('adminAnalyticsSection');
+                            if (section) section.style.display = 'block';
+                        }
+                    } catch (e) { console.error("Error checking admin role for analytics", e); }
+                });
+            </script>
         </div>
     </main>
 
@@ -257,6 +261,8 @@
                         <label for="employeeRole">Role</label>
                         <select id="employeeRole" name="employeeRole" class="form-input">
                             <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                            <option value="guest">Guest</option>
                         </select>
                     </div>
                     <div class="form-actions">
