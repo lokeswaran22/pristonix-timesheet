@@ -67,8 +67,8 @@ class TimesheetManager {
         const isAdmin = role === 'admin';
         const isManagement = isAdmin;
 
-        // Strict check for the restricted "Supervisor" admin (admin2)
-        const isRestrictedAdmin = (this.currentUser.username === 'admin2');
+        // Check for restricted "Guest" admin accounts
+        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username === 'guest@pristonix');
 
         console.log(`Role UI Update: Role=${role}, User=${this.currentUser.username}, Restricted=${isRestrictedAdmin}`);
 
@@ -98,26 +98,18 @@ class TimesheetManager {
         const exportPdfBtn = document.getElementById('exportPdfBtn');
         if (exportPdfBtn) exportPdfBtn.style.display = 'inline-flex';
 
-        // Admin Panel Link - Admin & TL can access
-        // User request: "only visible employees timesheet and report and logout"
-        // So we HIDE the "Admin Panel" (Audit Log) for admin2
+        // Admin Panel Link - Full admins only (not restricted supervisors)
         const adminBtn = document.getElementById('adminPanelToggleBtn');
         if (adminBtn) {
             adminBtn.style.display = (isManagement && !isRestrictedAdmin) ? 'inline-flex' : 'none';
             adminBtn.onclick = () => window.location.href = 'history.html';
         }
 
-        // Check Missing (Management/Notifications)
-        // Kept visible because previous request said "for intimate the employee who ever not filled"
+        // Check Missing (Management/Notifications) - Available for all admins including supervisors
         const checkMissingBtn = document.getElementById('checkMissingBtn');
         if (checkMissingBtn) checkMissingBtn.style.display = managementStyle;
 
-        // Report Button - Management Only
-        const reportBtn = document.getElementById('reportBtn');
-        if (reportBtn) reportBtn.style.display = managementStyle;
-
-        // Quick Actions - Admin Only
-        // Hide quick actions for restricted admin
+        // Quick Actions - Admin Only (hide for restricted admins)
         const adminQuickActions = document.getElementById('adminQuickActions');
         if (adminQuickActions) adminQuickActions.style.display = (isAdmin && !isRestrictedAdmin) ? 'flex' : 'none';
 
@@ -128,10 +120,10 @@ class TimesheetManager {
             analyticsSection.style.display = 'block';
         }
 
-        // Hide "Audit Log" button for non-admins
+        // Hide "Audit Log" button for non-admins and restricted admins
         const auditLogBtn = document.getElementById('adminAnalyticsControls');
         if (auditLogBtn) {
-            auditLogBtn.style.display = isAdmin ? 'flex' : 'none';
+            auditLogBtn.style.display = (isAdmin && !isRestrictedAdmin) ? 'flex' : 'none';
         }
 
         if (isManagement) this.loadDashboardAnalytics(); // This loads the sidebar stats if any
@@ -384,6 +376,13 @@ class TimesheetManager {
         const role = this.currentUser.role;
         const isAdmin = role === 'admin';
         const isManagement = isAdmin;
+        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username === 'guest@pristonix');
+
+        // Hide Actions column header for restricted admins
+        const actionsHeader = document.querySelector('.timesheet-table thead th:last-child');
+        if (actionsHeader && actionsHeader.textContent.includes('Actions')) {
+            actionsHeader.style.display = (isManagement && !isRestrictedAdmin) ? '' : 'none';
+        }
 
         // For employees, render vertical view
         if (!isManagement) {
@@ -500,9 +499,10 @@ class TimesheetManager {
                 });
             }
 
-            // Actions (Admin Only)
-            // Actions (Admin & TL)
-            if (isManagement) {
+            // Actions (Admin Only - Not for restricted admins)
+            const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username === 'guest@pristonix');
+
+            if (isManagement && !isRestrictedAdmin) {
                 const actionTd = document.createElement('td');
                 let buttons = '';
 
@@ -2191,10 +2191,6 @@ class TimesheetManager {
         });
 
 
-
-        document.getElementById('reportBtn')?.addEventListener('click', () => {
-            this.generateDailyReport();
-        });
 
         document.getElementById('exportPdfBtn')?.addEventListener('click', () => {
             this.generateDailyReport();

@@ -235,13 +235,26 @@ async function initDb() {
         const adminFound = await get("SELECT * FROM users WHERE role = 'admin'");
         if (!adminFound) {
             const adminUser = 'admin@pristonix';
-            const adminPass = '!pristonixadmin@2025';
+            const adminPass = '!pristonixadmin#@2026';
             const hashedPass = await bcrypt.hash(adminPass, 10);
             await run(
                 'INSERT INTO users (name, username, password, role, createdAt) VALUES (?, ?, ?, ?, ?)',
                 ['Master Admin', adminUser, hashedPass, 'admin', new Date().toISOString()]
             );
             console.log('Admin user created successfully.');
+        }
+
+        // Create Guest Admin (View-Only + Reminders)
+        const guestFound = await get("SELECT * FROM users WHERE username = 'guest@pristonix'");
+        if (!guestFound) {
+            const guestUser = 'guest@pristonix';
+            const guestPass = '#guestuser';
+            const hashedPass = await bcrypt.hash(guestPass, 10);
+            await run(
+                'INSERT INTO users (name, username, password, role, createdAt) VALUES (?, ?, ?, ?, ?)',
+                ['Guest Admin', guestUser, hashedPass, 'admin', new Date().toISOString()]
+            );
+            console.log('Guest Admin created successfully.');
         }
 
         console.log('Database schema synchronized.');
