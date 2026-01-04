@@ -1,0 +1,12 @@
+/* ==========================================
+   Z-INDEX LAYERS - Ensure confirmation modal appears above activity modal
+   ========================================== */
+#confirmModal {
+    z-index: 1002 !important;
+}
+
+#activityModal,
+#employeeModal,
+#employeeActionModal {
+    z-index: 1001;
+}
