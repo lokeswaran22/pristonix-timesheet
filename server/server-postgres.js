@@ -145,6 +145,30 @@ async function initDb() {
             );
         `);
 
+        // Activity History table (New Audit System)
+        await query(`
+            CREATE TABLE IF NOT EXISTS activity_history (
+                id SERIAL PRIMARY KEY,
+                activity_id INTEGER,
+                user_id INTEGER,
+                action_type VARCHAR(50),
+                action_by INTEGER,
+                old_data TEXT,
+                new_data TEXT,
+                date_key VARCHAR(50),
+                time_slot VARCHAR(50),
+                ip_address VARCHAR(50),
+                user_agent TEXT,
+                action_timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                user_name VARCHAR(255),
+                action_by_name VARCHAR(255)
+            );
+        `);
+
+        // Indexes for history
+        await query(`CREATE INDEX IF NOT EXISTS idx_hist_user ON activity_history(user_id);`);
+        await query(`CREATE INDEX IF NOT EXISTS idx_hist_date ON activity_history(date_key);`);
+
         // Create default users
         const adminUsername = 'admin@pristonix';
         const adminPassword = '!pristonixadmin#@2026';
@@ -462,8 +486,102 @@ app.delete('/api/activities', async (req, res) => {
 });
 
 // ==========================================
-// ACTIVITY LOG ROUTES
+// ACTIVITY LOG & AUDIT ROUTES
 // ==========================================
+
+// Audit Log Helper
+async function logActivityHistory(userId, actionType, actionBy, dateKey, timeSlot, oldData, newData, req) {
+    try {
+        const ip = req ? (req.headers['x-forwarded-for'] || req.socket.remoteAddress) : 'unknown';
+        const userAgent = req ? req.headers['user-agent'] : 'unknown';
+        const actionByUserId = actionBy || userId;
+
+        // Resolve Names
+        let userName = 'Unknown';
+        let actionByName = 'System';
+
+        if (userId) {
+            const u = await query('SELECT name FROM users WHERE id = $1', [userId]);
+            if (u.rows[0]) userName = u.rows[0].name;
+        }
+        if (actionByUserId) {
+            const a = await query('SELECT name FROM users WHERE id = $1', [actionByUserId]);
+            if (a.rows[0]) actionByName = a.rows[0].name;
+        } else {
+            actionByName = userName;
+        }
+
+        await query(`
+            INSERT INTO activity_history 
+            (activity_id, user_id, action_type, action_by, old_data, new_data, date_key, time_slot, ip_address, user_agent, user_name, action_by_name)
+            VALUES (NULL, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        `, [
+            userId,
+            actionType,
+            actionByUserId,
+            oldData ? JSON.stringify(oldData) : null,
+            newData ? JSON.stringify(newData) : null,
+            dateKey,
+            timeSlot,
+            ip,
+            userAgent,
+            userName,
+            actionByName
+        ]);
+        console.log(`Audit Logged (PSQL): ${actionType} | User: ${userName}`);
+    } catch (e) {
+        console.error('Audit Log Error (PSQL):', e);
+    }
+}
+
+// Get Audit History (Admin Only)
+app.get('/api/audit/history', async (req, res) => {
+    const { date, userId, actionType, limit } = req.query;
+
+    let text = `
+        SELECT h.*, 
+        COALESCE(h.user_name, u.name) as userName, 
+        COALESCE(h.action_by_name, a.name) as actionByName, 
+        a.role as actionByRole, 
+        u.role as targetRole
+        FROM activity_history h
+        LEFT JOIN users u ON h.user_id = u.id
+        LEFT JOIN users a ON h.action_by = a.id
+    `;
+
+    const params = [];
+    const clauses = [];
+
+    if (date) { clauses.push(`h.date_key = $${params.length + 1}`); params.push(date); }
+    if (userId) { clauses.push(`h.user_id = $${params.length + 1}`); params.push(userId); }
+    if (actionType) { clauses.push(`h.action_type = $${params.length + 1}`); params.push(actionType); }
+
+    if (clauses.length > 0) {
+        text += ' WHERE ' + clauses.join(' AND ');
+    }
+
+    text += ` ORDER BY h.action_timestamp DESC LIMIT $${params.length + 1}`;
+    params.push(limit || 100);
+
+    try {
+        const result = await query(text, params);
+
+        const processed = result.rows.map(row => {
+            let oldData = null;
+            let newData = null;
+            try { if (row.old_data) oldData = JSON.parse(row.old_data); } catch (e) { }
+            try { if (row.new_data) newData = JSON.parse(row.new_data); } catch (e) { }
+            return { ...row, old_data: oldData, new_data: newData };
+        });
+
+        res.json(processed);
+    } catch (err) {
+        console.error('Audit API Error:', err);
+        res.status(500).json({ error: 'Database error fetching history' });
+    }
+});
+
+// Legacy Activity Log Routes
 app.get('/api/activity-log', async (req, res) => {
     const limit = parseInt(req.query.limit) || 50;
     const date = req.query.date;
