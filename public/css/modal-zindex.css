@@ -1,12 +1,17 @@
 /* ==========================================
-   Z-INDEX LAYERS - Ensure confirmation modal appears above activity modal
+   Z-INDEX LAYERS - Ensure modals appear above header
    ========================================== */
+.modal {
+    z-index: 2000000 !important;
+}
+
 #confirmModal {
-    z-index: 1002 !important;
+    z-index: 3000000 !important;
 }
 
 #activityModal,
 #employeeModal,
-#employeeActionModal {
-    z-index: 1001;
+#employeeActionModal,
+#missingTimesheetModal {
+    z-index: 2000000;
 }

@@ -5,6 +5,8 @@ const path = require('path');
 const xlsx = require('xlsx');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+require('dotenv').config();
+const nodemailer = require('nodemailer');
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -246,7 +248,7 @@ async function initDb() {
 
 
         // Default Management Roles Check
-        const adminFound = await get("SELECT * FROM users WHERE role = 'admin'");
+        const adminFound = await get("SELECT * FROM users WHERE username = 'admin@pristonix'");
         if (!adminFound) {
             const adminUser = 'admin@pristonix';
             const adminPass = '!pristonixadmin#@2026';
@@ -348,6 +350,55 @@ app.post('/api/reset-password', async (req, res) => {
 
     } catch (err) {
         console.error('Reset Password Error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// Send Password Email Endpoint (Real with Fallback)
+app.post('/api/send-password-email', async (req, res) => {
+    const { userId, email, name, password } = req.body;
+
+    if (!email) return res.status(400).json({ error: 'Email required' });
+
+    try {
+        // Check for Email Config
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS || process.env.EMAIL_USER === 'your-email@gmail.com') {
+            // Log Mock
+            console.log('\n==================================================');
+            console.log(`📧  SEND PASSWORD EMAIL TO: ${name} (${email})`);
+            console.log(`🔑  PASSWORD: ${password}`);
+            console.log(`⚠️  NOTE: Real email not configured in .env. Using Mock.`);
+            console.log('==================================================\n');
+            return res.json({ success: true, message: 'Password logged to server console (Configure .env for real email).' });
+        }
+
+        // Configure Transporter
+        const transporter = nodemailer.createTransport({
+            service: process.env.EMAIL_SERVICE || 'gmail',
+            auth: {
+                user: process.env.EMAIL_USER,
+                pass: process.env.EMAIL_PASS
+            }
+        });
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Your Timesheet Login Credentials',
+            text: `Hello ${name},\n\nYour login credentials for the Timesheet Application:\n\nUsername: (Use your email or registered username)\nPassword: ${password}\n\nPlease login at: http://localhost:3000\n\nRegards,\nAdmin`
+        };
+
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.error('Email Send Error:', error);
+                return res.status(500).json({ error: 'Failed to send email. Check credentials.' });
+            }
+            console.log('Email sent: ' + info.response);
+            res.json({ success: true, message: `Email successfully sent to ${email}!` });
+        });
+
+    } catch (err) {
+        console.error('Send Password Email Error:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 });
@@ -539,6 +590,17 @@ app.post('/api/activities', async (req, res) => {
     const finalUserId = userId || employeeId;
 
     try {
+        // Prevent duplicate lunch breaks
+        if (type === 'lunch-break') {
+            const existingLunch = await get(
+                'SELECT id FROM activities WHERE userId = ? AND dateKey = ? AND type = ?',
+                [finalUserId, dateKey, 'lunch-break']
+            );
+            if (existingLunch) {
+                return res.json({ status: 'ignored', message: 'Lunch break already exists', id: existingLunch.id });
+            }
+        }
+
         const result = await run(`
             INSERT INTO activities(userId, dateKey, timeSlot, type, description, totalPages, pagesDone, startPage, endPage, timestamp)
             VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -1160,15 +1222,32 @@ app.get('/api/audit/history', async (req, res) => {
 
     try {
         const rows = await all(query, params);
-        // Parse JSON fields
-        const processed = rows.map(row => ({
-            ...row,
-            old_data: row.old_data ? JSON.parse(row.old_data) : null,
-            new_data: row.new_data ? JSON.parse(row.new_data) : null
-        }));
+        // Parse JSON fields defensively
+        const processed = rows.map(row => {
+            let oldData = null;
+            let newData = null;
+            try {
+                if (row.old_data) oldData = JSON.parse(row.old_data);
+            } catch (e) {
+                console.warn(`Failed to parse old_data for history ID ${row.id}:`, e.message);
+                oldData = { error: 'Invalid data' };
+            }
+            try {
+                if (row.new_data) newData = JSON.parse(row.new_data);
+            } catch (e) {
+                console.warn(`Failed to parse new_data for history ID ${row.id}:`, e.message);
+                newData = { error: 'Invalid data' };
+            }
+            return {
+                ...row,
+                old_data: oldData,
+                new_data: newData
+            };
+        });
         res.json(processed);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Audit API Query Error:', err);
+        res.status(500).json({ error: 'Database error while fetching history' });
     }
 });
 

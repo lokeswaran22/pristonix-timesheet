@@ -25,7 +25,6 @@
     <link rel="stylesheet" href="css/modal-styles.css">
     <link rel="stylesheet" href="css/reminder.css">
 
-    <link rel="stylesheet" href="css/overflow-fix.css">
     <link rel="stylesheet" href="css/clock-styles.css">
     <link rel="stylesheet" href="css/modal-zindex.css">
     <link rel="stylesheet" href="css/activity-badges.css">
@@ -44,45 +43,85 @@
         <div class="container">
             <div class="header-content">
                 <div class="logo">
-                    <img src="images/logogo.jpg" alt="Pristonix" width="60" height="40">
-                    <h1 class="logo-text" style="margin-left: -30px !important;">RISTONIX</h1>
+                    <img src="images/logogo.jpg" alt="Pristonix" height="40" style="width: auto;">
+                    <h1 class="logo-text">RISTONIX</h1>
                 </div>
                 <div class="header-actions">
                     <div id="digitalClock" class="digital-clock"></div>
-                    <span id="userInfoDisplay"
-                        style="color: var(--royal-gold); font-weight: 600; margin-right: 1rem;"></span>
-                    <button type="button" class="btn btn-sm btn-danger" id="logoutBtn" style="margin-right: 0.5rem;"
-                        onclick="handleLogoutWithAnimation(event)">Logout</button>
-                    <button class="btn btn-secondary" id="adminPanelToggleBtn" style="margin-right: 0.5rem;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                        </svg>
-                        Admin Panel
-                    </button>
-                    <button class="btn btn-primary" id="exportPdfBtn" style="margin-right: 0.5rem;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                            <polyline points="14 2 14 8 20 8"></polyline>
-                            <line x1="16" y1="13" x2="8" y2="13"></line>
-                            <line x1="16" y1="17" x2="8" y2="17"></line>
-                            <polyline points="10 9 9 9 8 9"></polyline>
-                        </svg>
-                        Export PDF
-                    </button>
 
-                    <button class="btn btn-primary" id="addEmployeeBtn">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                            stroke-width="2">
-                            <path d="M12 5v14M5 12h14" />
-                        </svg>
-                        Add Employee
-                    </button>
+                    <!-- User Profile Dropdown -->
+                    <div class="user-profile-dropdown" id="userProfileDropdown">
+                        <button class="profile-trigger" id="profileTrigger">
+                            <div class="avatar-circle">
+                                <span id="avatarInitial">U</span>
+                            </div>
+                            <span id="userInfoDisplay">Loading...</span>
+                            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </header>
+
+    <!-- Global Floating Dropdown Menu (Moved out of header to escape clipping) -->
+    <div class="dropdown-menu" id="profileMenu">
+        <div class="dropdown-header">
+            <span id="dropdownUserName" class="dropdown-user-name">User Name</span>
+            <span id="dropdownUserRole" class="dropdown-user-role">Role</span>
+        </div>
+        <div class="dropdown-divider"></div>
+
+        <button class="dropdown-item" id="adminPanelToggleBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg></span>
+            Admin Panel
+        </button>
+
+        <button class="dropdown-item" id="addEmployeeBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="23" y1="11" x2="17" y2="11" />
+                </svg></span>
+            Add Employee
+        </button>
+
+        <button class="dropdown-item" id="checkMissingBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg></span>
+            Reminders
+        </button>
+
+        <button class="dropdown-item" id="exportPdfBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg></span>
+            Export PDF
+        </button>
+
+        <div class="dropdown-divider"></div>
+
+        <button class="dropdown-item logout-item" id="logoutBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg></span>
+            Logout
+        </button>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -372,7 +411,7 @@
         </div>
     </div>
 
-    <!-- Confirmation Modal -->
+    <!-- Confirmation Modal (General) -->
     <div class="modal" id="confirmModal">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
             <div class="modal-header"
@@ -386,8 +425,42 @@
                     want to delete this employee? This action cannot be undone.</p>
                 <div class="form-actions"
                     style="justify-content: center; border-top: none; padding-top: 0; margin-top: 0; gap: 1rem;">
-                    <button class="btn btn-secondary" id="confirmCancelBtn" style="min-width: 100px;">Cancel</button>
-                    <button class="btn btn-danger" id="confirmOkBtn" style="min-width: 100px;">Delete</button>
+                    <button type="button" class="btn btn-secondary" id="confirmCancelBtn"
+                        style="min-width: 100px;">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmOkBtn"
+                        style="min-width: 100px;">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal (Premium) -->
+    <div class="modal" id="logoutConfirmModal">
+        <div class="modal-content" style="max-width: 420px; text-align: center; overflow: hidden;">
+            <div class="modal-body" style="padding: 2.5rem 2rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <div
+                        style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; margin-bottom: 1.5rem; border: 2px dashed rgba(239, 68, 68, 0.2);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </div>
+                </div>
+                <h3
+                    style="font-family: 'Playfair Display', serif; font-size: 1.75rem; color: #0f172a; margin-bottom: 1rem;">
+                    Ready to Leave?</h3>
+                <p style="color: #64748b; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem;">Are you sure you
+                    want to logout from your session? You will need to login again to access your timesheet.</p>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-secondary" id="cancelLogoutBtn"
+                        style="flex: 1; padding: 0.875rem; border-radius: 12px; font-weight: 600;">Stay Logged
+                        In</button>
+                    <button type="button" class="btn btn-danger" id="confirmLogoutBtn"
+                        style="flex: 1; padding: 0.875rem; border-radius: 12px; font-weight: 600; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none;">Yes,
+                        Logout</button>
                 </div>
             </div>
         </div>
@@ -499,7 +572,8 @@
     <script src="js/reminder.js?v=4"></script>
     <footer class="footer">
         <p>
-            <a href="https://pristonix.com" class="footer-brand" target="_blank">Pristonix</a> &copy; 2025 - All Rights
+            <a href="https://pristonix.com" class="footer-brand" target="_blank">Pristonix</a> &copy; 2025 - All
+            Rights
             Reserved.
         </p>
         <p>

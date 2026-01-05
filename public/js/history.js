@@ -5,18 +5,23 @@ class HistoryManager {
     }
 
     async init() {
-        // Security Check
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        const role = currentUser.role;
-        if (role !== 'admin') {
-            alert('Access Denied: Admin privileges required.');
-            window.location.href = 'index.html';
-            return;
-        }
+        const isHistoryPage = window.location.pathname.includes('history.html');
 
-        this.setupEventListeners();
-        await this.loadLogs();
-        this.loadDashboardAnalytics();
+        if (isHistoryPage) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const role = currentUser.role;
+
+            if (role !== 'admin') {
+                alert('Access Denied: Full admin privileges required.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            // Only initialize these on the history page
+            this.setupEventListeners();
+            await this.loadLogs();
+            this.loadDashboardAnalytics();
+        }
     }
 
     async loadDashboardAnalytics() {
@@ -114,18 +119,22 @@ class HistoryManager {
     async loadLogs() {
         this.showLoading(true);
         try {
-            // Fetch audit logs with limit & role context
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const res = await fetch(`/api/audit/history?limit=200&requesterRole=${currentUser.role}`);
-            if (!res.ok) throw new Error('Failed to load logs');
+            const role = currentUser.role || 'guest';
+            const res = await fetch(`/api/audit/history?limit=200&requesterRole=${role}`);
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || `Server error: ${res.status}`);
+            }
 
             this.rawLogs = await res.json();
             this.renderTable(this.rawLogs);
         } catch (err) {
-            console.error(err);
+            console.error('History Fetch Error:', err);
             const noData = document.getElementById('noDataState');
             if (noData) {
-                noData.textContent = 'Error loading history. Ensure server is running.';
+                noData.textContent = `Error loading history: ${err.message}. Ensure server is running.`;
                 noData.style.display = 'block';
             }
         } finally {

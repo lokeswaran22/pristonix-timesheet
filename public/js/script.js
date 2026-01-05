@@ -65,54 +65,78 @@ class TimesheetManager {
         this.currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
         const role = this.currentUser.role;
         const isAdmin = role === 'admin';
-        const isManagement = isAdmin;
+        const isGuest = role === 'guest';
+        const isManagement = isAdmin || isGuest;
 
         // Check for restricted "Guest" admin accounts
-        // Check for restricted "Guest" admin accounts or explicit guest usernames
-        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username.toLowerCase().includes('guest'));
+        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || isGuest || (this.currentUser.username && this.currentUser.username.toLowerCase().includes('guest')));
 
         console.log(`Role UI Update: Role=${role}, User=${this.currentUser.username}, Restricted=${isRestrictedAdmin}`);
+
+        // Update New Dropdown Info
+        const dropdownUserName = document.getElementById('dropdownUserName');
+        const dropdownUserRole = document.getElementById('dropdownUserRole');
+        const avatarInitial = document.getElementById('avatarInitial');
+        const userInfoDisplay = document.getElementById('userInfoDisplay');
+        const trigger = document.getElementById('profileTrigger');
+
+        if (dropdownUserName) dropdownUserName.textContent = this.currentUser.name || this.currentUser.username;
+        if (dropdownUserRole) {
+            // Display role with proper capitalization
+            const displayRole = isGuest ? 'Guest Admin' : role.charAt(0).toUpperCase() + role.slice(1);
+            dropdownUserRole.textContent = displayRole;
+            dropdownUserRole.className = `dropdown-user-role role-${role}-badge`;
+        }
+        if (avatarInitial && this.currentUser.username) {
+            avatarInitial.textContent = this.currentUser.username.charAt(0).toUpperCase();
+        }
+        if (userInfoDisplay) userInfoDisplay.textContent = this.currentUser.username;
+
+        if (trigger) {
+            const dropdownContainer = trigger.closest('.user-profile-dropdown');
+            if (dropdownContainer) {
+                dropdownContainer.classList.toggle('admin-avatar', isAdmin);
+                dropdownContainer.classList.toggle('employee-avatar', !isAdmin);
+            }
+        }
 
         // Initialize Management Features if Management
         if (isManagement) {
             if (!this.historyManager && window.HistoryManager) {
-                // Defer slightly to ensure DOM is ready
                 setTimeout(() => {
                     this.historyManager = new window.HistoryManager();
-                    // Load data immediately
-                    this.historyManager.loadLogs();
-                    this.historyManager.loadDashboardAnalytics();
+                    // loadLogs() and loadDashboardAnalytics() are handled by HistoryManager.init()
                 }, 100);
             }
         }
 
-        // Display styles
-        const managementStyle = isManagement ? 'inline-flex' : 'none';
-        const employeeOnlyStyle = isManagement ? 'none' : 'inline-flex';
+        // Dropdown Items Visibility
 
-        // Admin/TL Buttons
-        // "Add Employee" is strictly for full admins, NOT restricted ones
+        // Admin Panel Link - Full admins only
+        const adminBtn = document.getElementById('adminPanelToggleBtn');
+        if (adminBtn) {
+            adminBtn.style.display = (isManagement && !isRestrictedAdmin) ? 'flex' : 'none';
+        }
+
+        // "Add Employee" is strictly for full admins
         const addBtn = document.getElementById('addEmployeeBtn');
-        if (addBtn) addBtn.style.display = (isManagement && !isRestrictedAdmin) ? 'inline-flex' : 'none';
+        if (addBtn) {
+            addBtn.style.display = (isManagement && !isRestrictedAdmin) ? 'flex' : 'none';
+        }
+
+        // Reminders Button - Available for all admins including supervisors
+        const checkMissingBtn = document.getElementById('checkMissingBtn');
+        if (checkMissingBtn) {
+            checkMissingBtn.style.display = isManagement ? 'flex' : 'none';
+        }
 
         // Export PDF - Visible for everyone
         const exportPdfBtn = document.getElementById('exportPdfBtn');
-        if (exportPdfBtn) exportPdfBtn.style.display = 'inline-flex';
+        if (exportPdfBtn) exportPdfBtn.style.display = 'flex';
 
-        // Admin Panel Link - Full admins only (not restricted supervisors)
-        const adminBtn = document.getElementById('adminPanelToggleBtn');
-        if (adminBtn) {
-            adminBtn.style.display = (isManagement && !isRestrictedAdmin) ? 'inline-flex' : 'none';
-            adminBtn.onclick = () => window.location.href = 'history.html';
-        }
-
-        // Check Missing (Management/Notifications) - Available for all admins including supervisors
-        const checkMissingBtn = document.getElementById('checkMissingBtn');
-        if (checkMissingBtn) checkMissingBtn.style.display = managementStyle;
-
-        // Quick Actions - Admin Only (hide for restricted admins)
-        const adminQuickActions = document.getElementById('adminQuickActions');
-        if (adminQuickActions) adminQuickActions.style.display = (isAdmin && !isRestrictedAdmin) ? 'flex' : 'none';
+        // Digital Clock (Employee Mode only)
+        const digitalClock = document.getElementById('digitalClock');
+        if (digitalClock) digitalClock.style.display = isManagement ? 'none' : 'inline-flex';
 
         // Analytics Sidebar / Recent Changes - Admin Only
         const analyticsSection = document.getElementById('adminAnalyticsSection');
@@ -126,10 +150,7 @@ class TimesheetManager {
             auditLogBtn.style.display = (isAdmin && !isRestrictedAdmin) ? 'flex' : 'none';
         }
 
-        if (isManagement) this.loadDashboardAnalytics(); // This loads the sidebar stats if any
-        // Digital Clock (Employee Mode only)
-        const digitalClock = document.getElementById('digitalClock');
-        if (digitalClock) digitalClock.style.display = employeeOnlyStyle;
+        if (isManagement) this.loadDashboardAnalytics();
 
         if (!isManagement) {
             document.body.classList.add('employee-view');
@@ -301,7 +322,9 @@ class TimesheetManager {
 
         } catch (e) {
             console.error('Error loading data:', e);
-            this.showStatus('Error connecting to server', 'error');
+            // More descriptive error tracking
+            const errorMsg = e.message || 'Unknown network error';
+            this.showStatus(`Error connecting to server: ${errorMsg}. Please check if the server is running and your connection is stable.`, 'error');
         }
     }
 
@@ -375,8 +398,9 @@ class TimesheetManager {
 
         const role = this.currentUser.role;
         const isAdmin = role === 'admin';
-        const isManagement = isAdmin;
-        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username.toLowerCase().includes('guest'));
+        const isGuest = role === 'guest';
+        const isManagement = isAdmin || isGuest;
+        const isRestrictedAdmin = (this.currentUser.username === 'admin2' || isGuest || (this.currentUser.username && this.currentUser.username.toLowerCase().includes('guest')));
 
         // Hide Actions column header for restricted admins
         const actionsHeader = document.querySelector('.timesheet-table thead th:last-child');
@@ -390,8 +414,8 @@ class TimesheetManager {
             return;
         }
 
-        // Filter: Admin sees all users except other admins
-        let usersToShow = this.employees.filter(u => u.role !== 'admin');
+        // Filter: Admin sees employees and guest users, but not full admins
+        let usersToShow = this.employees.filter(u => u.role === 'employee' || u.role === 'guest');
 
         if (usersToShow.length === 0) {
             tbody.innerHTML = '<tr><td colspan="100%">No employees found.</td></tr>';
@@ -500,7 +524,7 @@ class TimesheetManager {
             }
 
             // Actions (Admin Only - Not for restricted admins)
-            const isRestrictedAdmin = (this.currentUser.username === 'admin2' || this.currentUser.username.toLowerCase().includes('guest'));
+            const isRestrictedAdmin = (this.currentUser.username === 'admin2' || (this.currentUser.username && this.currentUser.username.toLowerCase().includes('guest')));
 
             if (isManagement && !isRestrictedAdmin) {
                 const actionTd = document.createElement('td');
@@ -802,17 +826,19 @@ class TimesheetManager {
         div.style.background = 'transparent';
         div.style.boxShadow = 'none';
 
-        // Only employees can add/edit activities (not admins)
+        // Only employees can add/edit activities (not admins for other users)
         const isAdmin = this.currentUser.role === 'admin';
-        if (!isAdmin) {
+        const isSelf = userId == this.currentUser.id;
+        const canEdit = isSelf || (isAdmin && isSelf); // Strictly self-edit for everyone
+
+        if (canEdit) {
             div.onclick = () => {
-                console.log('Activity cell clicked:', { userId, timeSlot, currentUserId: this.currentUser.id, role: this.currentUser.role });
                 this.openActivityModal(userId, timeSlot);
             };
             div.style.cursor = 'pointer';
         } else {
             div.style.cursor = 'default';
-            div.title = 'Admins cannot add activities. Only employees can.';
+            div.title = 'View Only';
         }
 
         if (acts && acts.length > 0) {
@@ -846,6 +872,7 @@ class TimesheetManager {
             div.innerHTML = '<span>+</span>';
 
             // Admin: Click "+" to Send Reminder
+            const isAdmin = this.currentUser.role === 'admin';
             if (isAdmin) {
                 div.style.cursor = 'pointer';
                 div.title = 'Click to Notify Employee';
@@ -974,33 +1001,15 @@ class TimesheetManager {
 
                     // Update hint message
                     if (passwordHint) {
-                        const sendBtn = user.email ?
-                            ` <button type="button" id="sendPasswordBtn" style="margin-left: 10px; padding: 4px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.85rem;">📧 Send Password</button>` : '';
-
                         let hintText = '';
                         if (isHashed) {
-                            hintText = `✓ Password is set (Encrypted). Admin cannot view old encrypted passwords. Reset to view in future.${sendBtn}`;
+                            hintText = '✓ Password is set (Encrypted). Admin cannot view old encrypted passwords. Reset to view in future.';
                         } else {
-                            hintText = `✓ Current password is exposed (Plain Text).${sendBtn}`;
+                            hintText = '✓ Current password is exposed.';
                         }
 
                         passwordHint.innerHTML = hintText;
                         passwordHint.style.display = 'block';
-
-                        // Add event listener for send password button
-                        if (user.email) {
-                            setTimeout(() => {
-                                const sendPasswordBtn = document.getElementById('sendPasswordBtn');
-                                if (sendPasswordBtn) {
-                                    sendPasswordBtn.onclick = () => {
-                                        if (isHashed && !confirm('Password is encrypted and cannot be seen. Send anyway? (User might accept it if they know it)')) {
-                                            return;
-                                        }
-                                        this.sendPasswordEmail(user.id, user.email, user.name, isHashed ? 'HIDDEN (Ask Admin to Reset)' : user.password);
-                                    };
-                                }
-                            }, 100);
-                        }
                     }
                 })
                 .catch(err => {
@@ -1124,6 +1133,8 @@ class TimesheetManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     id,
+                    userId: activityData.userId || this.editingActivityKey?.userId,
+                    editedBy: this.currentUser?.username || 'Admin',
                     ...activityData
                 })
             });
@@ -1158,13 +1169,88 @@ class TimesheetManager {
         }
     }
 
+    /**
+     * Premium Confirmation Dialog
+     * Returns a promise that resolves to true (OK) or false (Cancel)
+     */
+    async confirmAction(titleText, messageText, okText = 'OK', okClass = 'btn-primary') {
+        const modal = document.getElementById('confirmModal');
+        const title = document.getElementById('confirmModalTitle');
+        const message = document.getElementById('confirmModalMessage');
+        const okBtn = document.getElementById('confirmOkBtn');
+        const cancelBtn = document.getElementById('confirmCancelBtn');
+
+        if (!modal || !okBtn || !cancelBtn) {
+            return window.confirm(messageText);
+        }
+
+        return new Promise((resolve) => {
+            title.textContent = titleText;
+            message.textContent = messageText;
+
+            // Clone buttons to strip all previous listeners
+            const newOk = okBtn.cloneNode(true);
+            newOk.textContent = okText;
+            // Ensure proper class and style
+            newOk.className = 'btn ' + okClass;
+            newOk.style.cssText = 'min-width: 100px; padding: 10px 20px; font-weight: 600; cursor: pointer;';
+            okBtn.parentNode.replaceChild(newOk, okBtn);
+
+            const newCancel = cancelBtn.cloneNode(true);
+            newCancel.style.cssText = 'min-width: 100px; padding: 10px 20px; font-weight: 600; cursor: pointer;';
+            cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
+
+            const handleOk = (e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                modal.classList.remove('show');
+                modal.style.display = 'none'; // Explicitly hide for simple-modals
+                if (window.closeAllModals) window.closeAllModals();
+                newOk.removeEventListener('click', handleOk);
+                resolve(true);
+            };
+
+            const handleCancel = (e) => {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                modal.classList.remove('show');
+                modal.style.display = 'none'; // Explicitly hide for simple-modals
+                if (window.closeAllModals) window.closeAllModals();
+                newCancel.removeEventListener('click', handleCancel);
+                resolve(false);
+            };
+
+            newOk.addEventListener('click', handleOk);
+            newCancel.addEventListener('click', handleCancel);
+
+            // Open via Portal if available (highest compatibility)
+            if (window.openModal) {
+                window.openModal('confirmModal');
+            } else {
+                modal.classList.add('show');
+            }
+        });
+    }
+
     async deleteEmployee(id) {
         if (this.currentUser.role !== 'admin') {
             this.showStatus('Access Denied: Only Admins can delete employees.', 'error');
             return;
         }
 
-        if (!confirm('Are you sure? This will delete all history for this user.')) return;
+        const confirmed = await this.confirmAction(
+            'Delete Employee?',
+            'Are you sure? This will delete all history for this user. This action cannot be undone.',
+            'Delete',
+            'btn-danger'
+        );
+
+        if (!confirmed) return;
+
         try {
             const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
             if (res.ok) {
@@ -1263,68 +1349,70 @@ class TimesheetManager {
     }
 
     openActivityModal(userId, timeSlot) {
-        console.log('openActivityModal called:', { userId, timeSlot });
-
-        // Permission check: Employees can only edit their own activities
         const isAdmin = this.currentUser.role === 'admin';
-        if (!isAdmin && userId != this.currentUser.id) {
-            alert('You can only edit your own activities.');
+        const isSelf = userId == this.currentUser.id;
+
+        // Strict: Admin cannot open employee activity modals at all
+        if (isAdmin && !isSelf) {
+            console.log('Admin blocked from opening employee activity');
             return;
         }
 
         this.editingActivityKey = { userId, timeSlot };
-        console.log('editingActivityKey set:', this.editingActivityKey);
-
         const modal = document.getElementById('activityModal');
+        const form = document.getElementById('activityForm');
 
-        // Reset form FIRST (before setting values)
-        document.getElementById('activityForm').reset();
+        if (!modal || !form) return;
 
-        // THEN populate values (so they don't get cleared by reset)
+        // Reset form
+        form.reset();
+
+        // Populate values
         document.getElementById('activityTimeSlotDisplay').textContent = timeSlot;
         document.getElementById('activityEmployeeId').value = userId;
         document.getElementById('activityTimeSlot').value = timeSlot;
 
-
         // Load existing if any
         const acts = this.getActivity(userId, timeSlot);
         const hasActivity = acts && acts.length > 0;
-        console.log('Has activity:', hasActivity, acts);
 
-        // Show/hide Delete button based on whether activity exists
         // Render existing activities list
-        this.renderExistingActivitiesList(userId, timeSlot);
+        this.renderExistingActivitiesList(userId, timeSlot, false);
 
         if (hasActivity) {
-            const last = acts[acts.length - 1]; // Load last activity for editing
-            document.getElementById('activityType').value = last.type;
-
-            // Separate Issue from Description if present
-            let desc = last.description;
-            if (desc.includes(' | Issue: ')) {
-                const parts = desc.split(' | Issue: ');
-                desc = parts[0];
-                const issue = parts[1];
-                if (document.getElementById('activityIssues')) document.getElementById('activityIssues').value = issue;
-            } else {
-                if (document.getElementById('activityIssues')) document.getElementById('activityIssues').value = '';
+            const last = acts[acts.length - 1];
+            const typeSelect = document.getElementById('activityType');
+            if (typeSelect) {
+                typeSelect.value = last.type;
+                typeSelect.dispatchEvent(new Event('change'));
             }
 
-            // Clean description of page info if it was appended (legacy support)
-            document.getElementById('activityDescription').value = desc.split(' (Pages:')[0];
+            let desc = last.description || '';
+            if (desc.includes(' | Issue: ')) {
+                const parts = desc.split(' | Issue: ');
+                document.getElementById('activityDescription').value = parts[0];
+                if (document.getElementById('activityIssues')) {
+                    document.getElementById('activityIssues').value = parts[1];
+                }
+            } else {
+                document.getElementById('activityDescription').value = desc;
+                if (document.getElementById('activityIssues')) {
+                    document.getElementById('activityIssues').value = '';
+                }
+            }
 
-            if (last.startPage && document.getElementById('startPage')) document.getElementById('startPage').value = last.startPage;
-            if (last.endPage && document.getElementById('endPage')) document.getElementById('endPage').value = last.endPage;
+            if (last.startPage && document.getElementById('startPage')) {
+                document.getElementById('startPage').value = last.startPage;
+            }
+            if (last.endPage && document.getElementById('endPage')) {
+                document.getElementById('endPage').value = last.endPage;
+            }
 
-            // Trigger calc
-            const startInput = document.getElementById('startPage');
-            if (startInput) startInput.dispatchEvent(new Event('input'));
+            document.getElementById('startPage')?.dispatchEvent(new Event('input'));
         }
 
         if (window.openModal) window.openModal('activityModal');
         else modal.classList.add('show');
-
-        console.log('Modal opened');
     }
 
     closeActivityModal() {
@@ -1336,23 +1424,22 @@ class TimesheetManager {
         this.editingActivityId = null;
     }
 
-    renderExistingActivitiesList(userId, timeSlot) {
+    renderExistingActivitiesList(userId, timeSlot, isViewOnly = false) {
         const acts = this.getActivity(userId, timeSlot);
         const hasActivity = acts && acts.length > 0;
 
         // Show/hide Delete button based on whether activity exists
         const deleteBtn = document.getElementById('deleteActivityBtn');
         if (deleteBtn) {
-            if (hasActivity && acts.length === 1) {
-                // Single activity - show delete button
+            if (isViewOnly) {
+                deleteBtn.style.display = 'none';
+            } else if (hasActivity && acts.length === 1) {
                 deleteBtn.style.display = 'inline-block';
                 deleteBtn.textContent = 'Delete';
             } else if (hasActivity && acts.length > 1) {
-                // Multiple activities - change button to "Clear All"
                 deleteBtn.style.display = 'inline-block';
                 deleteBtn.textContent = 'Clear All';
             } else {
-                // No activity - hide button
                 deleteBtn.style.display = 'none';
             }
         }
@@ -1380,6 +1467,7 @@ class TimesheetManager {
                             ${act.pagesDone && parseInt(act.pagesDone) > 0 ? `<span style="color: #64748b; font-size: 0.85rem; margin-left: 0.5rem;">(${act.pagesDone} pages)</span>` : ''}
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
+                            ${isViewOnly ? '' : `
                             <button type="button" class="btn btn-sm" onclick="window.timesheetManager.editIndividualActivity(${userId}, '${timeSlot}', ${index})" 
                                 style="background: #3b82f6; color: white; padding: 4px 12px; font-size: 0.8rem;">
                                 Edit
@@ -1388,6 +1476,7 @@ class TimesheetManager {
                                 style="background: #ef4444; color: white; padding: 4px 12px; font-size: 0.8rem;">
                                 Delete
                             </button>
+                            `}
                         </div>
                     </div>
                 `;
@@ -1400,132 +1489,75 @@ class TimesheetManager {
         }
     }
 
-    async handleClearActivity() {
-        console.log('=== handleClearActivity START ===');
+    async clearActivity(userId, timeSlot) {
+        console.log('🗑️ clearActivity called:', { userId, timeSlot });
 
-        // Get values from form
-        let userId = document.getElementById('activityEmployeeId')?.value;
-        let timeSlot = document.getElementById('activityTimeSlot')?.value;
-
-        console.log('Form values:', { userId, timeSlot });
-        console.log('editingActivityKey:', this.editingActivityKey);
-        console.log('currentUser:', this.currentUser);
-
-        // Fallback to editingActivityKey if form values are empty
-        if ((!userId || !timeSlot) && this.editingActivityKey) {
-            console.log('Using editingActivityKey fallback');
-            userId = this.editingActivityKey.userId;
-            timeSlot = this.editingActivityKey.timeSlot;
+        // Validation
+        if (!userId || !timeSlot || timeSlot === 'undefined') {
+            const userIdInput = document.getElementById('activityEmployeeId');
+            userId = userId || userIdInput?.value;
+            const timeSlotInput = document.getElementById('activityTimeSlot');
+            timeSlot = timeSlot || timeSlotInput?.value;
         }
 
-        // Last resort: use current user if we're an employee
-        if (!userId && this.currentUser && this.currentUser.role !== 'admin') {
-            console.log('Using currentUser fallback');
-            userId = this.currentUser.id;
-        }
-
-        console.log('Final values:', { userId, timeSlot });
-
-        if (!userId || !timeSlot) {
+        if (!userId || !timeSlot || timeSlot === 'undefined') {
             console.error('Missing data - cannot clear');
-            alert('Error: Unable to determine which activity to clear. Please close this modal and try again.');
+            this.showStatus('Error: Unable to determine which activity to clear.', 'error');
             return;
         }
 
-        // Check if activity exists
         const dateKey = this.getDateKey(this.currentDate);
         const hasActivity = this.activities[dateKey]?.[userId]?.[timeSlot];
-        console.log('Activity exists?', hasActivity);
 
         if (!hasActivity) {
-            alert('No activity found for this time slot.');
+            this.showStatus('No activity found to clear.', 'error');
             return;
         }
 
-        // Use custom confirmation modal instead of browser confirm
-        return new Promise((resolve) => {
-            const modal = document.getElementById('confirmModal');
-            const title = document.getElementById('confirmModalTitle');
-            const message = document.getElementById('confirmModalMessage');
-            const okBtn = document.getElementById('confirmOkBtn');
-            const cancelBtn = document.getElementById('confirmCancelBtn');
+        // Use centralized confirmation
+        const confirmed = await this.confirmAction(
+            'Clear Activity?',
+            `Are you sure you want to clear all activities for ${timeSlot}? This action cannot be undone.`,
+            'Clear',
+            'btn-warning'
+        );
 
-            // Set modal content
-            title.textContent = 'Clear Activity?';
-            message.textContent = `Are you sure you want to clear all activities for ${timeSlot}? This action cannot be undone.`;
-            okBtn.textContent = 'Clear';
-            okBtn.className = 'btn';
-            okBtn.style.cssText = 'min-width: 100px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white;';
+        if (!confirmed) return;
 
-            // Show modal
-            modal.classList.add('show');
-            console.log('Confirmation modal shown');
+        try {
+            const res = await fetch('/api/activities', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dateKey, userId: parseInt(userId), timeSlot })
+            });
 
-            // Handle OK click
-            const handleOk = async () => {
-                console.log('User confirmed clear');
-                modal.classList.remove('show');
-                okBtn.removeEventListener('click', handleOk);
-                cancelBtn.removeEventListener('click', handleCancel);
-
-                try {
-                    console.log('Sending DELETE request:', { dateKey, userId, timeSlot });
-
-                    const res = await fetch('/api/activities', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ dateKey, userId: parseInt(userId), timeSlot })
-                    });
-
-                    console.log('DELETE response status:', res.status);
-
-                    if (res.ok) {
-                        const result = await res.json();
-                        console.log('DELETE success:', result);
-
-                        // Remove locally
-                        if (this.activities[dateKey]?.[userId]?.[timeSlot]) {
-                            delete this.activities[dateKey][userId][timeSlot];
-                            console.log('Removed from local cache');
-                        }
-                        // Log the clear action
-                        if (window.activityTracker) {
-                            const employee = this.employees.find(emp => emp.id == userId);
-                            if (employee) {
-                                const logSlot = `${dateKey} | ${timeSlot}`;
-                                window.activityTracker.addActivity(employee.name, 'clear', `Cleared all activities for ${timeSlot}`, logSlot, 'deleted', dateKey);
-                            }
-                        }
-
-                        this.closeActivityModal();
-                        this.renderTimesheet();
-                        this.showStatus('Activity cleared successfully');
-                        resolve(true);
-                    } else {
-                        const errData = await res.json();
-                        console.error('Delete failed:', errData);
-                        alert('Failed to clear activity: ' + (errData.error || 'Unknown error'));
-                        resolve(false);
-                    }
-                } catch (e) {
-                    console.error('Clear activity error:', e);
-                    alert('Error clearing activity: ' + e.message);
-                    resolve(false);
+            if (res.ok) {
+                // Remove locally
+                if (this.activities[dateKey]?.[userId]?.[timeSlot]) {
+                    delete this.activities[dateKey][userId][timeSlot];
                 }
-            };
 
-            // Handle Cancel click
-            const handleCancel = () => {
-                console.log('User cancelled clear');
-                modal.classList.remove('show');
-                okBtn.removeEventListener('click', handleOk);
-                cancelBtn.removeEventListener('click', handleCancel);
-                resolve(false);
-            };
+                // Log the clear action
+                if (window.activityTracker) {
+                    const employee = this.employees.find(emp => emp.id == userId);
+                    if (employee) {
+                        const logSlot = `${dateKey} | ${timeSlot}`;
+                        window.activityTracker.addActivity(employee.name, 'clear', `Cleared all activities for ${timeSlot}`, logSlot, 'deleted', dateKey);
+                    }
+                }
 
-            okBtn.addEventListener('click', handleOk);
-            cancelBtn.addEventListener('click', handleCancel);
-        });
+                this.closeActivityModal();
+                await this.loadData();
+                this.renderTimesheet();
+                this.showStatus('Activity cleared successfully');
+            } else {
+                const errData = await res.json();
+                this.showStatus(errData.error || 'Failed to clear activity', 'error');
+            }
+        } catch (e) {
+            console.error('Clear activity error:', e);
+            this.showStatus('Error clearing activity', 'error');
+        }
     }
 
     async deleteIndividualActivity(userId, timeSlot, activityIndex) {
@@ -1541,10 +1573,15 @@ class TimesheetManager {
 
         const activityToDelete = acts[activityIndex];
 
-        // Confirm deletion
-        if (!confirm(`Delete ${activityToDelete.type} activity: "${activityToDelete.description}"?`)) {
-            return;
-        }
+        // Use centralized confirmation
+        const confirmed = await this.confirmAction(
+            'Delete Activity?',
+            `Are you sure you want to delete this ${activityToDelete.type} activity? This action cannot be undone.`,
+            'Delete',
+            'btn-danger'
+        );
+
+        if (!confirmed) return;
 
         try {
             // Delete from backend by sending the specific activity details
@@ -1561,7 +1598,6 @@ class TimesheetManager {
 
             console.log('DELETE response status:', res.status);
             const responseData = await res.json();
-            console.log('DELETE response data:', responseData);
 
             if (res.ok) {
                 // Remove from local cache
@@ -1627,7 +1663,11 @@ class TimesheetManager {
         }
 
         // Load the activity data into the form
-        document.getElementById('activityType').value = activityToEdit.type;
+        const typeSelect = document.getElementById('activityType');
+        if (typeSelect) {
+            typeSelect.value = activityToEdit.type;
+            typeSelect.dispatchEvent(new Event('change'));
+        }
 
         // Separate Issue from Description if present
         let desc = activityToEdit.description;
@@ -1685,59 +1725,12 @@ class TimesheetManager {
 
         cancelEditBtn.style.display = 'inline-block';
         cancelEditBtn.onclick = () => {
-            cancelEditBtn.onclick = () => {
-                this.editingActivityIndex = null;
-                this.editingActivityId = null;
-                this.openActivityModal(userId, timeSlot);
-            };
+            this.editingActivityIndex = null;
+            this.editingActivityId = null;
             this.openActivityModal(userId, timeSlot);
         };
 
         this.showStatus(`Editing activity ${activityIndex + 1}. Click "Update Activity" to save changes.`, 'info');
-    }
-
-    async clearActivity(userId, timeSlot) {
-        const dateKey = this.getDateKey(this.currentDate);
-        console.log('🗑️  clearActivity called:', { dateKey, userId, timeSlot });
-
-        try {
-            const requestBody = {
-                dateKey,
-                userId: parseInt(userId),
-                timeSlot
-            };
-
-            const res = await fetch('/api/activities', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(requestBody)
-            });
-
-            if (res.ok) {
-                // Log the clear action
-                if (window.activityTracker) {
-                    const employee = this.employees.find(emp => emp.id == userId);
-                    if (employee) {
-                        const logSlot = `${dateKey} | ${timeSlot}`;
-                        window.activityTracker.addActivity(employee.name, 'clear', 'Cleared all activities for slot', logSlot, 'deleted', dateKey);
-                    }
-                }
-
-                // Remove locally
-                if (this.activities[dateKey]?.[userId]?.[timeSlot]) {
-                    delete this.activities[dateKey][userId][timeSlot];
-                }
-                this.closeActivityModal();
-                this.renderTimesheet();
-                this.showStatus('Activity deleted successfully');
-            } else {
-                const responseData = await res.json();
-                this.showStatus(responseData.error || 'Failed to delete activity', 'error');
-            }
-        } catch (e) {
-            console.error('❌ Error deleting activity:', e);
-            this.showStatus('Error deleting activity', 'error');
-        }
     }
 
     openEmployeeActionModal(userId, name) {
@@ -2033,8 +2026,9 @@ class TimesheetManager {
 
         setTimeout(() => {
             toast.style.opacity = '0';
-            setTimeout(() => toast.remove(), 500);
-        }, 4000);
+            toast.style.transform = 'translateX(-50%) translateY(-20px)';
+            setTimeout(() => toast.remove(), 600);
+        }, 7000); // 7 seconds duration
     }
 
     // ==========================================
@@ -2061,9 +2055,8 @@ class TimesheetManager {
             return;
         }
 
-        // Guest Role Handling
+        // Guest Role Handling - Keep as 'guest' role
         if (role === 'guest') {
-            role = 'admin'; // Must be admin to see the main timesheet
             if (!username.toLowerCase().includes('guest')) {
                 this.showStatus('Guest username must contain "guest" (e.g. guest_user)', 'error');
                 return;
@@ -2166,6 +2159,54 @@ class TimesheetManager {
         // Greeting
         this.showGreeting();
 
+        // User Profile Dropdown Toggle
+        const profileTrigger = document.getElementById('profileTrigger');
+        const profileMenu = document.getElementById('profileMenu');
+
+        if (profileTrigger && profileMenu) {
+            profileTrigger.addEventListener('click', (e) => {
+                e.stopPropagation();
+
+                // Toggle state
+                const isShowing = profileMenu.classList.toggle('show');
+                profileTrigger.classList.toggle('active');
+
+                if (isShowing) {
+                    // Dynamic positioning for Global Floating Menu
+                    const rect = profileTrigger.getBoundingClientRect();
+                    profileMenu.style.top = `${rect.bottom + 10}px`;
+                    profileMenu.style.right = `${window.innerWidth - rect.right}px`;
+                }
+            });
+
+            // Close when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!profileTrigger.contains(e.target) && !profileMenu.contains(e.target)) {
+                    profileMenu.classList.remove('show');
+                    profileTrigger.classList.remove('active');
+                }
+            });
+        }
+
+        // Admin Panel Toggle - Uniform Redirect
+        document.getElementById('adminPanelToggleBtn')?.addEventListener('click', (e) => {
+            console.log('🔗 Navigating to Admin Panel');
+            window.location.href = 'history.html';
+        });
+
+        // Logout Button - Modern Listener
+        document.getElementById('logoutBtn')?.addEventListener('click', (e) => {
+            console.log('🚪 Logout clicked');
+            if (typeof window.handleLogoutWithAnimation === 'function') {
+                window.handleLogoutWithAnimation(e);
+            } else {
+                console.error('❌ logout function not found on window');
+                // Fallback
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        });
+
         // Activity Type Change Listener
         document.getElementById('activityType')?.addEventListener('change', (e) => {
             const type = e.target.value;
@@ -2183,6 +2224,16 @@ class TimesheetManager {
             const isFull = e.target.checked;
             document.getElementById('startSlot').disabled = isFull;
             document.getElementById('endSlot').disabled = isFull;
+        });
+
+        // Header Scroll Effect
+        const header = document.querySelector('.header');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 10) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
         });
 
         // Modal Close Buttons
@@ -2256,45 +2307,17 @@ class TimesheetManager {
                 return;
             }
 
-            // Use Custom Confirm Modal
-            const confirmModal = document.getElementById('confirmModal');
-            const title = document.getElementById('confirmModalTitle');
-            const msg = document.getElementById('confirmModalMessage');
-            const okBtn = document.getElementById('confirmOkBtn');
-            const cancelBtn = document.getElementById('confirmCancelBtn');
+            // Use centralized confirmation
+            const confirmed = await this.confirmAction(
+                'Delete Activity?',
+                `Are you sure you want to delete all activities for ${timeSlot}?`,
+                'Delete',
+                'btn-danger'
+            );
 
-            if (confirmModal && title && msg && okBtn) {
-                title.textContent = 'Delete Activity?';
-                msg.textContent = `Are you sure you want to delete all activities for ${timeSlot}?`;
-
-                // Show confirmation modal WITHOUT closing activity modal
-                confirmModal.style.display = 'flex';
-                confirmModal.style.zIndex = '10001'; // Higher than activity modal
-
-                // Clean old listeners to prevent stacking
-                const newOk = okBtn.cloneNode(true);
-                okBtn.parentNode.replaceChild(newOk, okBtn);
-
-                const newCancel = cancelBtn.cloneNode(true);
-                cancelBtn.parentNode.replaceChild(newCancel, cancelBtn);
-
-                newCancel.addEventListener('click', () => {
-                    console.log('Delete cancelled');
-                    confirmModal.style.display = 'none';
-                });
-
-                newOk.addEventListener('click', async () => {
-                    console.log('Delete confirmed, calling clearActivity...');
-                    confirmModal.style.display = 'none';
-                    await this.clearActivity(userId, timeSlot);
-                });
-            } else {
-                console.log('Confirm modal not found, using browser confirm');
-                if (confirm(`Delete all activities for ${timeSlot}?`)) {
-                    console.log('Delete confirmed (browser), calling clearActivity...');
-                    await this.clearActivity(userId, timeSlot);
-                    this.closeActivityModal();
-                }
+            if (confirmed) {
+                console.log('Delete confirmed, calling clearActivity...');
+                await this.clearActivity(userId, timeSlot);
             }
         });
 
@@ -2302,16 +2325,15 @@ class TimesheetManager {
         document.getElementById('employeeForm')?.addEventListener('submit', (e) => this.handleEmployeeSubmit(e));
         document.getElementById('activityForm')?.addEventListener('submit', (e) => this.handleActivitySubmit(e));
 
-        // Admin Panel Toggle
+        // Admin Panel Toggle - Redirect
         document.getElementById('adminPanelToggleBtn')?.addEventListener('click', () => {
-            this.toggleAdminPanel(true);
+            window.location.href = 'history.html';
         });
 
         document.getElementById('backToTimesheetBtn')?.addEventListener('click', () => {
-            this.toggleAdminPanel(false);
+            // Simply hide dropdown if it was used there
+            document.getElementById('profileMenu')?.classList.remove('show');
         });
-
-        // Logout Button handled in auth-check.js (No duplicate listener needed here)
 
         // Page calculation
         const startPageInput = document.getElementById('startPage');
@@ -2525,7 +2547,7 @@ class TimesheetManager {
 
             // Create and show modal
             const modalHtml = `
-                <div id="missingTimesheetModal" class="modal-backdrop" style="display: flex;">
+                <div id="missingTimesheetModal" class="modal" style="display: flex;">
                     <div class="modal-content" style="max-width: 600px; max-height: 80vh; overflow: auto;">
                         <div class="modal-header">
                             <h3>Missing Timesheets - ${dateKey}</h3>

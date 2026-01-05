@@ -38,23 +38,28 @@
     window.handleLogoutWithAnimation = function (e) {
         if (e && e.preventDefault) e.preventDefault();
 
-        if (confirm('Are you sure you want to logout?')) {
-            const overlay = document.getElementById('logoutOverlay');
-            if (overlay) {
-                overlay.style.display = 'flex'; // Ensure flex display
-                // Force reflow
-                void overlay.offsetWidth;
-                overlay.classList.add('active');
-
-                // Wait for animation
-                setTimeout(() => {
-                    performFinalLogout();
-                }, 2000);
-            } else {
-                performFinalLogout();
+        const logoutModal = document.getElementById('logoutConfirmModal');
+        if (logoutModal) {
+            logoutModal.style.display = 'flex';
+        } else {
+            // Fallback for pages without the custom modal
+            if (confirm('Are you sure you want to logout?')) {
+                performFinalLogoutWithOverlay();
             }
         }
     };
+
+    function performFinalLogoutWithOverlay() {
+        const overlay = document.getElementById('logoutOverlay');
+        if (overlay) {
+            overlay.style.display = 'flex';
+            void overlay.offsetWidth;
+            overlay.classList.add('active');
+            setTimeout(() => performFinalLogout(), 2000);
+        } else {
+            performFinalLogout();
+        }
+    }
 
     function performFinalLogout() {
         localStorage.clear();
@@ -62,33 +67,32 @@
         window.location.href = 'login.html';
     }
 
-    // Display user info in header
-    window.addEventListener('DOMContentLoaded', function () {
-        const userInfoDisplay = document.getElementById('userInfoDisplay');
-        if (userInfoDisplay && currentUser) {
-            let bg = 'linear-gradient(135deg, #3b82f6 0%, #1e40af 100%)'; // Employee Blue
-            if (currentUser.role === 'admin') bg = 'linear-gradient(135deg, #d4af37 0%, #aa8c2c 100%)'; // Admin Gold
+    // Proactive Event Listener for Logout
+    document.addEventListener('DOMContentLoaded', function () {
+        const logoutBtn = document.getElementById('logoutBtn');
+        const confirmBtn = document.getElementById('confirmLogoutBtn');
+        const cancelBtn = document.getElementById('cancelLogoutBtn');
+        const logoutModal = document.getElementById('logoutConfirmModal');
 
-            userInfoDisplay.innerHTML = `
-                <span style="
-                    background: ${bg};
-                    color: white;
-                    padding: 0.4rem 0.8rem;
-                    border-radius: 6px;
-                    font-size: 0.85rem;
-                    font-weight: 600;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-                ">
-                    ${currentUser.username} (${currentUser.role})
-                </span>
-            `;
+        if (logoutBtn) {
+            console.log('✅ Logout button found. Attaching robust listener.');
+            logoutBtn.addEventListener('click', function (e) {
+                console.log('🚪 Logout clicked (custom modal triggered)');
+                window.handleLogoutWithAnimation(e);
+            });
         }
 
-        // Cleanup Logout Button: We rely on HTML onclick="performLogout(event)"
-        // This is simple and robust. No need to interfere via JS.
-        const logoutBtn = document.getElementById('logoutBtn');
-        if (logoutBtn) {
-            console.log('Logout button found, using inline onclick');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                if (logoutModal) logoutModal.style.display = 'none';
+                performFinalLogoutWithOverlay();
+            });
+        }
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                if (logoutModal) logoutModal.style.display = 'none';
+            });
         }
     });
 })();
