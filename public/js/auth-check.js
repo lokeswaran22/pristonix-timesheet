@@ -2,6 +2,9 @@
 (function () {
     'use strict';
 
+    // Hide page content initially to prevent flash
+    document.documentElement.style.visibility = 'hidden';
+
     // Check if user is logged in
     let currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
@@ -23,6 +26,9 @@
     if (window.location.pathname.includes('login.html')) {
         if (currentUser) {
             window.location.href = '/';
+        } else {
+            // Show login page
+            document.documentElement.style.visibility = 'visible';
         }
         return;
     }
@@ -32,6 +38,9 @@
         window.location.href = '/login.html';
         return;
     }
+
+    // Authentication passed - show page content
+    document.documentElement.style.visibility = 'visible';
 
     // Expose Logout Globally Immediately
     // Expose Logout Globally with Animation

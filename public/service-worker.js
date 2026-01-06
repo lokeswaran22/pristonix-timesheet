@@ -1,27 +1,40 @@
-const CACHE_NAME = 'pristonix-timesheet-v1';
+const CACHE_NAME = 'pristonix-timesheet-v2';
 const urlsToCache = [
     '/',
     '/index.html',
     '/login.html',
-    '/style.css',
-    '/login-style.css',
-    '/modal-styles.css',
-    '/activity-badges.css',
-    '/timeslot-reminders.css',
-    '/lunch-break.css',
-    '/script.js',
-    '/history.js'
+    '/css/style.css',
+    '/css/login-style.css',
+    '/css/modal-styles.css',
+    '/css/activity-badges.css',
+    '/css/timeslot-reminders.css',
+    '/css/lunch-break.css',
+    '/js/script.js',
+    '/js/history.js'
 ];
 
-// Install event - cache resources
+// Install event - cache resources with error handling
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('Opened cache');
-                return cache.addAll(urlsToCache);
+                // Cache files individually to avoid failing if one file is missing
+                return Promise.allSettled(
+                    urlsToCache.map(url =>
+                        cache.add(url).catch(err => {
+                            console.warn(`Failed to cache ${url}:`, err);
+                            return null;
+                        })
+                    )
+                );
+            })
+            .catch(err => {
+                console.error('Cache installation failed:', err);
             })
     );
+    // Skip waiting to activate immediately
+    self.skipWaiting();
 });
 
 // Fetch event - serve from cache, fallback to network

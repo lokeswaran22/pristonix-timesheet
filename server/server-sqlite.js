@@ -113,7 +113,7 @@ async function initDb() {
                 name TEXT NOT NULL,
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                role TEXT CHECK(role IN ('admin', 'employee')) NOT NULL DEFAULT 'employee',
+                role TEXT CHECK(role IN ('admin', 'employee', 'guest')) NOT NULL DEFAULT 'employee',
                 email TEXT,
                 managerId INTEGER,
                 createdAt TEXT
@@ -245,6 +245,39 @@ async function initDb() {
             await run('ALTER TABLE activity_history ADD COLUMN action_by_name TEXT');
             console.log('Migrated activity_history: Added snapshot name columns');
         } catch (e) { }
+
+        // Migration: Update users table to support 'guest' role
+        try {
+            // Check if we need to migrate by trying to insert a test guest user
+            const testResult = await run(`
+                CREATE TABLE IF NOT EXISTS users_new (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    username TEXT UNIQUE NOT NULL,
+                    password TEXT NOT NULL,
+                    role TEXT CHECK(role IN ('admin', 'employee', 'guest')) NOT NULL DEFAULT 'employee',
+                    email TEXT,
+                    managerId INTEGER,
+                    createdAt TEXT
+                )
+            `).catch(() => null);
+
+            // Copy data from old table to new table
+            const userCount = await get('SELECT COUNT(*) as count FROM users');
+            if (userCount && userCount.count > 0) {
+                await run('INSERT INTO users_new SELECT * FROM users');
+                await run('DROP TABLE users');
+                await run('ALTER TABLE users_new RENAME TO users');
+                console.log('✅ Migrated users table to support guest role');
+            } else {
+                // No data to migrate, just drop and rename
+                await run('DROP TABLE IF EXISTS users');
+                await run('ALTER TABLE users_new RENAME TO users');
+                console.log('✅ Created users table with guest role support');
+            }
+        } catch (e) {
+            console.log('Users table already supports guest role or migration not needed');
+        }
 
 
         // Default Management Roles Check

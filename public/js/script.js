@@ -134,6 +134,8 @@ class TimesheetManager {
         const exportPdfBtn = document.getElementById('exportPdfBtn');
         if (exportPdfBtn) exportPdfBtn.style.display = 'flex';
 
+
+
         // Digital Clock (Employee Mode only)
         const digitalClock = document.getElementById('digitalClock');
         if (digitalClock) digitalClock.style.display = isManagement ? 'none' : 'inline-flex';
@@ -152,7 +154,8 @@ class TimesheetManager {
 
         if (isManagement) this.loadDashboardAnalytics();
 
-        if (!isManagement) {
+        // Apply employee-view class only for actual employees (not guests or admins)
+        if (role === 'employee') {
             document.body.classList.add('employee-view');
         } else {
             document.body.classList.remove('employee-view');
@@ -414,8 +417,8 @@ class TimesheetManager {
             return;
         }
 
-        // Filter: Admin sees employees and guest users, but not full admins
-        let usersToShow = this.employees.filter(u => u.role === 'employee' || u.role === 'guest');
+        // Filter: Admin sees employees only (not guests or other admins)
+        let usersToShow = this.employees.filter(u => u.role === 'employee');
 
         if (usersToShow.length === 0) {
             tbody.innerHTML = '<tr><td colspan="100%">No employees found.</td></tr>';
@@ -1822,6 +1825,23 @@ class TimesheetManager {
                                 timestamp: new Date().toISOString()
                             });
                         }
+
+                        // Automatically remove lunch break for full day leave
+                        const lunchSlot = '01:00-01:40';
+                        try {
+                            await fetch('/api/activities', {
+                                method: 'DELETE',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    dateKey,
+                                    userId: this.actionUserId,
+                                    timeSlot: lunchSlot
+                                })
+                            });
+                            console.log('✅ Lunch break automatically removed for full day leave');
+                        } catch (err) {
+                            console.log('No lunch break to remove:', err);
+                        }
                     } else {
                         const sIdx = this.timeSlots.indexOf(start);
                         const eIdx = this.timeSlots.indexOf(end);
@@ -2186,6 +2206,16 @@ class TimesheetManager {
                     profileTrigger.classList.remove('active');
                 }
             });
+
+            // Close dropdown after clicking menu items (with delay to allow modal to open)
+            profileMenu.querySelectorAll('.dropdown-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    setTimeout(() => {
+                        profileMenu.classList.remove('show');
+                        profileTrigger.classList.remove('active');
+                    }, 150);
+                });
+            });
         }
 
         // Admin Panel Toggle - Uniform Redirect
@@ -2269,6 +2299,8 @@ class TimesheetManager {
         // Specific Cancel Buttons (if class selection misses them)
         document.getElementById('cancelBtn')?.addEventListener('click', () => this.closeEmployeeModal());
         document.getElementById('cancelActivityBtn')?.addEventListener('click', () => this.closeActivityModal());
+
+
 
         // Delete Activity Button - Robust
         document.getElementById('deleteActivityBtn')?.addEventListener('click', async (e) => {
@@ -2530,10 +2562,11 @@ class TimesheetManager {
         }
     }
 
-    // Admin: Show employees with missing timesheets
+    // Admin/Guest: Show employees with missing timesheets
     async showMissingTimesheets() {
-        if (this.currentUser.role !== 'admin') {
-            this.showStatus('Admin access required', 'error');
+        const isManagement = this.currentUser.role === 'admin' || this.currentUser.role === 'guest';
+        if (!isManagement) {
+            this.showStatus('Management access required', 'error');
             return;
         }
 
@@ -2654,11 +2687,15 @@ class TimesheetManager {
         const dateKey = this.getDateKey(this.currentDate);
         const dateStr = this.currentDate.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-        // Filter users: if employee, only show self. If admin, show all but self/other admins.
+        // Filter users: if employee, only show self. If admin or guest, show all employees.
         let users = [];
-        if (this.currentUser.role === 'admin') {
-            users = this.employees.filter(u => u.role !== 'admin').sort((a, b) => a.name.localeCompare(b.name));
+        const isManagement = this.currentUser.role === 'admin' || this.currentUser.role === 'guest';
+
+        if (isManagement) {
+            // Admin and Guest: show all employees (not other admins/guests)
+            users = this.employees.filter(u => u.role === 'employee').sort((a, b) => a.name.localeCompare(b.name));
         } else {
+            // Employee: show only self
             users = this.employees.filter(u => u.id === this.currentUser.id);
         }
 
@@ -2982,7 +3019,7 @@ class TimesheetManager {
                 </table>
 
                 <div class="footer">
-                    © 2025 Pristonix Solutions. All Rights Reserved. | Generated on ${new Date().toLocaleString()}
+                    © 2025 Pristonix Solutions. All Rights Reserved. | Generated on ${window.formatDateTime ? window.formatDateTime(new Date()) : new Date().toLocaleString()}
                 </div>
             </body>
             </html>
@@ -3162,6 +3199,8 @@ class ActivityTracker {
             console.error('Error logging activity', e);
         }
     }
+
+
 }
 
 window.timesheetManager = new TimesheetManager();

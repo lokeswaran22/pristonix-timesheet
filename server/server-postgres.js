@@ -189,9 +189,19 @@ async function initDb() {
             ON CONFLICT (username) DO NOTHING
         `, ['Supervisor', 'admin2', hashedAdmin2, admin2Password, 'admin', 'admin2@pristonix.com']);
 
+        // Create Guest Admin (View-Only + Reminders)
+        const guestPassword = '#guestuser';
+        const hashedGuest = await bcrypt.hash(guestPassword, 10);
+        await query(`
+            INSERT INTO users (name, username, password, plain_password, role, email)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (username) DO NOTHING
+        `, ['Guest Admin', 'guest@pristonix', hashedGuest, guestPassword, 'guest', 'guest@pristonix.com']);
+
         console.log('✅ Database schema synchronized');
         console.log('👤 Admin: admin@pristonix');
         console.log('👤 Supervisor: admin2');
+        console.log('👤 Guest: guest@pristonix');
     } catch (err) {
         console.error('❌ Error initializing database:', err);
     }
