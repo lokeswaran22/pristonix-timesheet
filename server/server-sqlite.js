@@ -816,6 +816,17 @@ app.delete('/api/activity-log', async (req, res) => {
     }
 });
 
+// Delete a single activity‑log entry (admin only)
+app.delete('/api/activity-log/:id', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const result = await run('DELETE FROM activity_log WHERE id = ?', [id]);
+        res.json({ message: 'Log entry deleted', changes: result.changes });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Leave & Permissions
 app.post('/api/leave', async (req, res) => {
     const { userId, startDate, endDate, reason } = req.body;

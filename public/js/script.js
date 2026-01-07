@@ -3144,7 +3144,7 @@ class ActivityTracker {
                             <span class="type-tag tag-${activityType}">${niceTypeLabel}</span>
                          </div>
                          <div class="activity-desc">
-                            ${description || log.action}
+                             ${description || log.action}
                          </div>
                     </div>
 
@@ -3155,10 +3155,22 @@ class ActivityTracker {
                         </svg>
                         <span>${slotDisplay}</span>
                         ${showEditor ? `<span style="margin-left: auto; color: #f59e0b; font-size: 0.7rem;">By: ${editedBy}</span>` : ''}
+                        ${window.timesheetManager && window.timesheetManager.currentUser && window.timesheetManager.currentUser.role === 'admin' ? `<button class="icon-btn del-log-btn" title="Delete Log" data-id="${log.id}">🗑</button>` : ''}
                     </div>
                 </div>
             `;
             output.appendChild(item);
+            const delBtn = item.querySelector('.del-log-btn');
+            if (delBtn) {
+                delBtn.onclick = async () => {
+                    try {
+                        await fetch(`/api/activity-log/${log.id}`, { method: 'DELETE' });
+                        item.remove();
+                    } catch (e) {
+                        console.error('Delete log error', e);
+                    }
+                };
+            }
         });
     }
 
