@@ -175,21 +175,47 @@ class TimesheetManager {
                 fetch(`/api/analytics/charts?date=${date}`)
             ]);
 
+            // Validate summary response
             if (sumRes.ok) {
-                const summary = await sumRes.json();
-                const elEmp = document.getElementById('dashStatEmp');
-                const elAct = document.getElementById('dashStatAct');
-                const elPages = document.getElementById('dashStatPages');
-                if (elEmp) elEmp.textContent = summary.employees;
-                if (elAct) elAct.textContent = summary.activities;
-                if (elPages) elPages.textContent = summary.totalPages;
+                const contentType = sumRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const summary = await sumRes.json();
+                        const elEmp = document.getElementById('dashStatEmp');
+                        const elAct = document.getElementById('dashStatAct');
+                        const elPages = document.getElementById('dashStatPages');
+                        if (elEmp) elEmp.textContent = summary.employees;
+                        if (elAct) elAct.textContent = summary.activities;
+                        if (elPages) elPages.textContent = summary.totalPages;
+                    } catch (jsonErr) {
+                        console.error('Failed to parse summary JSON:', jsonErr);
+                    }
+                } else {
+                    console.error('Summary response is not JSON, got:', contentType);
+                }
+            } else {
+                console.error('Summary request failed with status:', sumRes.status);
             }
 
+            // Validate charts response
             if (chartRes.ok) {
-                const data = await chartRes.json();
-                this.renderDashboardCharts(data);
+                const contentType = chartRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const data = await chartRes.json();
+                        this.renderDashboardCharts(data);
+                    } catch (jsonErr) {
+                        console.error('Failed to parse charts JSON:', jsonErr);
+                    }
+                } else {
+                    console.error('Charts response is not JSON, got:', contentType);
+                }
+            } else {
+                console.error('Charts request failed with status:', chartRes.status);
             }
-        } catch (e) { console.error('Dashboard Error', e); }
+        } catch (e) {
+            console.error('Dashboard Error', e);
+        }
     }
 
     renderDashboardCharts(data) {
