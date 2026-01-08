@@ -1,0 +1,73 @@
+/* Digital Clock Styles */
+.digital-clock {
+    font-family: 'Inter', monospace;
+    /* Modern monospace feel */
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--primary-blue-dark);
+    /* Darker blue for contrast */
+    background: rgba(37, 99, 235, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-full);
+    margin-right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    min-width: 140px;
+    justify-content: center;
+}
+
+/* Greeting Toast Custom */
+.greeting-toast {
+    position: fixed;
+    top: 90px;
+    /* Perfectly below the main header line */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 1.25rem 2.5rem;
+    border-radius: 50px;
+    /* Pill shape */
+    box-shadow:
+        0 10px 30px -5px rgba(0, 0, 0, 0.2),
+        0 0 0 1px rgba(212, 175, 55, 0.15);
+    /* Soft gold ring */
+    border: 3px solid #d4af37;
+    z-index: 10000000;
+    /* Absolute Top Layer */
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    animation: slideDownGreeting 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+    transition: all 0.6s ease;
+}
+
+.greeting-icon {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 2px 4px rgba(212, 175, 55, 0.4));
+}
+
+.greeting-text {
+    font-family: 'Playfair Display', serif;
+    font-weight: 700;
+    color: #1e3a8a;
+    font-size: 1.15rem;
+    letter-spacing: 0.2px;
+}
+
+@keyframes slideDownGreeting {
+    from {
+        transform: translateX(-50%) translateY(-150px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
