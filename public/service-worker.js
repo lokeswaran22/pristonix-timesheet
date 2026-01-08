@@ -1,4 +1,4 @@
-const CACHE_NAME = 'pristonix-timesheet-v2';
+const CACHE_NAME = 'pristonix-timesheet-v3';
 const urlsToCache = [
     '/',
     '/index.html',
