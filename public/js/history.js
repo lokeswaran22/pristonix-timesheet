@@ -40,27 +40,51 @@ class HistoryManager {
 
             console.log('Dashboard Data Responses:', sumRes.status, chartRes.status);
 
+            // Validate summary response
             if (sumRes.ok) {
-                const summary = await sumRes.json();
-                const elEmp = document.getElementById('dashStatEmp');
-                const elAct = document.getElementById('dashStatAct');
-                const elPages = document.getElementById('dashStatPages');
-                if (elEmp) elEmp.textContent = summary.employees || '0';
-                if (elAct) elAct.textContent = summary.activities || '0';
-                if (elPages) elPages.textContent = summary.totalPages || '0';
+                const contentType = sumRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const summary = await sumRes.json();
+                        const elEmp = document.getElementById('dashStatEmp');
+                        const elAct = document.getElementById('dashStatAct');
+                        const elPages = document.getElementById('dashStatPages');
+                        if (elEmp) elEmp.textContent = summary.employees || '0';
+                        if (elAct) elAct.textContent = summary.activities || '0';
+                        if (elPages) elPages.textContent = summary.totalPages || '0';
+                    } catch (jsonErr) {
+                        console.error('Failed to parse summary JSON:', jsonErr);
+                        document.getElementById('dashStatEmp').textContent = 'Err';
+                    }
+                } else {
+                    console.error('Summary response is not JSON, got:', contentType);
+                    document.getElementById('dashStatEmp').textContent = 'Err';
+                }
             } else {
-                console.error('Summary API Failed');
+                console.error('Summary API Failed with status:', sumRes.status);
                 document.getElementById('dashStatEmp').textContent = 'Err';
             }
 
+            // Validate charts response
             if (chartRes.ok) {
-                const data = await chartRes.json();
-                console.log('Chart Data:', data);
-                if (!window.Chart) {
-                    console.error('Chart.js library not found!');
-                    return;
+                const contentType = chartRes.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    try {
+                        const data = await chartRes.json();
+                        console.log('Chart Data:', data);
+                        if (!window.Chart) {
+                            console.error('Chart.js library not found!');
+                            return;
+                        }
+                        this.renderCharts(data);
+                    } catch (jsonErr) {
+                        console.error('Failed to parse charts JSON:', jsonErr);
+                    }
+                } else {
+                    console.error('Charts response is not JSON, got:', contentType);
                 }
-                this.renderCharts(data);
+            } else {
+                console.error('Charts API Failed with status:', chartRes.status);
             }
         } catch (e) {
             console.error('Dashboard Error:', e);
