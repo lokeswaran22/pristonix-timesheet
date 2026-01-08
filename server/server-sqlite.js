@@ -15,7 +15,7 @@ const dbPath = path.resolve(__dirname, '../database/timesheet.db');
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+// Static files will be served AFTER API routes to prevent conflicts
 
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) console.error('Error opening database:', err.message);
@@ -1364,6 +1364,10 @@ app.get('/api/analytics/charts', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
+
+// Serve static files AFTER all API routes
+app.use(express.static(path.join(__dirname, '../public')));
+
 
 app.listen(port, () => {
     console.log(`Server running on port ${port} `);
