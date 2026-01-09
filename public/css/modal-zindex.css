@@ -1,0 +1,17 @@
+/* ==========================================
+   Z-INDEX LAYERS - Ensure modals appear above header
+   ========================================== */
+.modal {
+    z-index: 2000000 !important;
+}
+
+#confirmModal {
+    z-index: 3000000 !important;
+}
+
+#activityModal,
+#employeeModal,
+#employeeActionModal,
+#missingTimesheetModal {
+    z-index: 2000000;
+}
