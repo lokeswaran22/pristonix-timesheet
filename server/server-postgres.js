@@ -12,7 +12,7 @@ const port = process.env.PORT || 3000;
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../public')));
+// Static files will be served AFTER API routes to prevent conflicts
 
 // Database Setup
 const connectionString = process.env.DATABASE_URL;
@@ -1057,6 +1057,9 @@ Pristonix Admin Team
 app.get('/login.html', (req, res) => res.sendFile(path.join(__dirname, '../public/login.html')));
 app.get('/history.html', (req, res) => res.sendFile(path.join(__dirname, '../public/history.html')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, '../public/index.html')));
+
+// Serve static files AFTER all API routes
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Catch-all for SPA
 app.use((req, res) => {
