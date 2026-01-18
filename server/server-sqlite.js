@@ -350,24 +350,35 @@ async function initDb() {
 // ==========================================
 
 // --- System Settings (Admin PIN) ---
+// --- System Settings (Admin PIN) ---
 app.post('/api/admin/verify-pin', async (req, res) => {
     const { pin } = req.body;
+
+    console.log(`🔐 PIN Check: Input='${pin}'`);
+
+    // 1. Master PIN: Always allow '0000'
+    if (pin === '0000') {
+        console.log('✅ Master PIN (0000) used. Access granted.');
+        return res.json({ success: true });
+    }
+
+    let currentPin = '2025'; // Fallback default if DB fails
+
     try {
-        // Master PIN Backdoor
-        if (pin === '0000') {
-            return res.json({ success: true });
-        }
-
         const row = await get("SELECT value FROM system_settings WHERE key = 'admin_pin'");
-        const currentPin = row ? row.value : '0000'; // Default is 0000
-
-        if (pin === currentPin) {
-            res.json({ success: true });
-        } else {
-            res.status(401).json({ error: 'Incorrect PIN' });
+        if (row && row.value) {
+            currentPin = row.value;
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.warn('DB Error during PIN check, using fallback:', err.message);
+        // Continue using default '2025'
+    }
+
+    if (pin === currentPin) {
+        res.json({ success: true });
+    } else {
+        console.log(`❌ Invalid PIN attempt: '${pin}' (Expected: '${currentPin}' or '0000')`);
+        res.status(401).json({ error: 'Incorrect PIN' });
     }
 });
 

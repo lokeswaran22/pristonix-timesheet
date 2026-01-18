@@ -1,0 +1,264 @@
+/* ==========================================
+   RESPONSIVE DESIGN SYSTEM
+   ========================================== */
+
+/* Tablet & Smaller Laptops (Max Width 1024px) */
+@media screen and (max-width: 1024px) {
+    .container {
+        padding: 0 var(--space-4);
+    }
+
+    .header-content {
+        padding: 0 var(--space-2);
+    }
+
+    /* Adjust Date Selector for Tablets */
+    .date-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .date-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .date-input {
+        flex-grow: 1;
+    }
+}
+
+/* Mobile Devices (Max Width 768px) */
+@media screen and (max-width: 768px) {
+
+    /* Global Spacing Adjustments */
+    :root {
+        --space-6: 1rem;
+        /* Reduce large gaps */
+        --space-8: 1.5rem;
+        --space-12: 2rem;
+    }
+
+    .main-content {
+        padding-top: calc(60px + var(--space-4));
+        /* Smaller offset */
+        padding-bottom: 80px;
+        /* Space for specific mobile navs if any */
+    }
+
+    /* --- HEADER --- */
+    .header-content {
+        min-height: 60px;
+        gap: var(--space-2);
+    }
+
+    .logo img {
+        height: 32px;
+    }
+
+    .logo-text {
+        font-size: 1.5rem;
+        /* Smaller logo text */
+    }
+
+    .digital-clock {
+        display: none !important;
+        /* Hide clock on mobile to save space */
+    }
+
+    .user-profile-dropdown {
+        margin-left: auto;
+        /* Push to right */
+    }
+
+    #userInfoDisplay {
+        display: none;
+        /* Hide username text, show avatar only */
+    }
+
+    .avatar-circle {
+        width: 32px;
+        height: 32px;
+        font-size: 0.875rem;
+    }
+
+    /* --- DROPDOWN MENU --- */
+    .dropdown-menu {
+        width: 90%;
+        /* Wide dropdown on mobile */
+        right: 5%;
+        left: 5%;
+        top: 70px;
+        transform-origin: top center;
+    }
+
+    /* --- CARDS & CONTAINERS --- */
+    .date-selector-card,
+    .timesheet-container,
+    .activity-tracker-card {
+        padding: var(--space-4);
+        border-radius: var(--radius-lg);
+    }
+
+    .date-selector h2 {
+        font-size: 1.25rem;
+    }
+
+    /* --- CONTROLS --- */
+    .date-controls button {
+        padding: var(--space-2);
+    }
+
+    /* --- EMPLOYEE VERTICAL VIEW (Mobile Optimized) --- */
+    .employee-vertical-timesheet {
+        border-radius: var(--radius-lg);
+        box-shadow: none;
+        border: 1px solid var(--neutral-200);
+    }
+
+    .employee-vertical-timesheet .employee-header {
+        padding: var(--space-4);
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .employee-vertical-timesheet .employee-name {
+        font-size: 1.25rem;
+    }
+
+    .employee-vertical-timesheet .employee-stats {
+        gap: var(--space-3);
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .employee-vertical-timesheet .stat-item {
+        min-width: 0;
+        flex: 1;
+        padding: var(--space-2);
+    }
+
+    .employee-vertical-timesheet .stat-value {
+        font-size: 1rem;
+    }
+
+    .employee-vertical-timesheet .timeslot-row {
+        flex-direction: column;
+        /* Stack time and activity */
+    }
+
+    .employee-vertical-timesheet .timeslot-time {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid var(--neutral-200);
+        padding: var(--space-2);
+        background: var(--neutral-50);
+        justify-content: flex-start;
+        font-size: 0.8rem;
+    }
+
+    .employee-vertical-timesheet .timeslot-activity {
+        padding: var(--space-3);
+        min-height: 50px;
+    }
+
+    /* --- ADMIN TABLE VIEW ON MOBILE --- */
+    /* Force horizontal scroll for the big table */
+    .table-wrapper {
+        border-radius: var(--radius-md);
+        margin-top: var(--space-4);
+        box-shadow: inset -5px 0 10px -5px rgba(0, 0, 0, 0.1);
+        /* Hint scroll */
+    }
+
+    /* Sticky User Column adjustments */
+    .timesheet-table td:first-child,
+    .timesheet-table th:first-child,
+    .master-table td:first-child,
+    .master-table th:first-child {
+        min-width: 120px;
+        max-width: 140px;
+        position: sticky;
+        left: 0;
+        z-index: 5;
+        background: #fff;
+        /* Ensure opacity */
+        /* Ensure sticky column has shadow so it looks distinct */
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+    }
+
+    /* --- MODALS --- */
+    .modal-content {
+        width: 95% !important;
+        margin: 10px;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: var(--space-4);
+    }
+
+    .form-group {
+        margin-bottom: var(--space-3);
+    }
+
+    .form-actions {
+        flex-direction: column-reverse;
+        /* Stack buttons, primary on top usually, but cancel bottom is safer for mobile taps */
+        gap: var(--space-3);
+    }
+
+    .form-actions button {
+        width: 100%;
+    }
+
+    /* Login Page Specifics */
+    .login-container {
+        padding: var(--space-4);
+    }
+
+    .login-card {
+        padding: var(--space-6);
+    }
+
+    .login-header h1 {
+        font-size: 1.75rem;
+    }
+
+    /* Activity Tracker / History Page */
+    .filters-grid {
+        grid-template-columns: 1fr;
+        /* Stack filters */
+    }
+
+    .data-table-card {
+        border-radius: var(--radius-md);
+    }
+
+    /* Hide specific non-critical columns in history table on very small screens? */
+    /* .master-table th:nth-child(4), .master-table td:nth-child(4) { display: none; } */
+    /* Maybe too aggressive */
+}
+
+/* Very Small Mobile (Max Width 380px) */
+@media screen and (max-width: 380px) {
+    .logo-text {
+        font-size: 1.2rem;
+    }
+
+    .employee-vertical-timesheet .employee-stats {
+        flex-direction: column;
+    }
+
+    .employee-vertical-timesheet .stat-item {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .employee-vertical-timesheet .stat-label {
+        margin-bottom: 0;
+    }
+}

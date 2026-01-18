@@ -198,6 +198,21 @@ async function initDb() {
             ON CONFLICT (username) DO NOTHING
         `, ['Guest Admin', 'guest@pristonix', hashedGuest, guestPassword, 'guest', 'guest@pristonix.com']);
 
+        // System Settings Table (For Admin PIN)
+        await query(`
+            CREATE TABLE IF NOT EXISTS system_settings (
+                key VARCHAR(255) PRIMARY KEY,
+                value TEXT
+            );
+        `);
+
+        // Initialize Default PIN '0000' if not set
+        const pinCheck = await query("SELECT value FROM system_settings WHERE key = 'admin_pin'");
+        if (pinCheck.rows.length === 0) {
+            await query("INSERT INTO system_settings (key, value) VALUES ($1, $2)", ['admin_pin', '0000']);
+            console.log('📌 Admin PIN initialized to default (0000)');
+        }
+
         console.log('✅ Database schema synchronized');
         console.log('👤 Admin: admin@pristonix');
         console.log('👤 Supervisor: admin2');
@@ -257,6 +272,62 @@ app.post('/api/login', async (req, res) => {
 // ==========================================
 // USERS/EMPLOYEES ROUTES
 // ==========================================
+
+// --- System Settings (Admin PIN) ---
+app.post('/api/admin/verify-pin', async (req, res) => {
+    const { pin } = req.body;
+
+    // 1. Master PIN: Always allow '0000'
+    if (pin === '0000') {
+        return res.json({ success: true });
+    }
+
+    let currentPin = '2025'; // Fallback default
+
+    try {
+        const result = await query("SELECT value FROM system_settings WHERE key = 'admin_pin'");
+        if (result.rows.length > 0) {
+            currentPin = result.rows[0].value;
+        }
+    } catch (err) {
+        console.warn('DB Error during PIN check, using fallback:', err.message);
+    }
+
+    if (pin === currentPin) {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ error: 'Incorrect PIN' });
+    }
+});
+
+app.post('/api/admin/change-pin', async (req, res) => {
+    const { currentPin, newPin } = req.body;
+    if (!newPin || (newPin.length !== 4 && newPin.length !== 5)) {
+        return res.status(400).json({ error: 'New PIN must be 4 or 5 digits' });
+    }
+
+    try {
+        const result = await query("SELECT value FROM system_settings WHERE key = 'admin_pin'");
+        const storedPin = (result.rows.length > 0) ? result.rows[0].value : '0000';
+
+        // Allow change if current PIN matches OR if master PIN '0000' is used
+        if (currentPin !== storedPin && currentPin !== '0000') {
+            return res.status(401).json({ error: 'Current PIN is incorrect' });
+        }
+
+        await query(`
+            INSERT INTO system_settings (key, value)
+            VALUES ('admin_pin', $1)
+            ON CONFLICT (key) DO UPDATE SET value = $1
+        `, [newPin]);
+
+        res.json({ success: true, message: 'PIN updated successfully' });
+    } catch (err) {
+        console.error('Change PIN Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get('/api/users', async (req, res) => {
     try {
         const result = await query('SELECT id, name, username, role, email, createdAt FROM users ORDER BY name');
