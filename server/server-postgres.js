@@ -475,27 +475,74 @@ app.get('/api/activities', async (req, res) => {
 });
 
 app.post('/api/activities', async (req, res) => {
-    const { dateKey, userId, employeeId, timeSlot, type, description, totalPages, pagesDone, timestamp } = req.body;
+    const { dateKey, userId, employeeId, timeSlot, type, description, totalPages, pagesDone, timestamp, editedBy } = req.body;
     const finalUserId = userId || employeeId;
 
     console.log('Saving activity to PostgreSQL:', { dateKey, userId: finalUserId, timeSlot, type });
 
     try {
-        await query(`
+        const result = await query(`
             INSERT INTO activities (dateKey, userId, timeSlot, type, description, totalPages, pagesDone, timestamp)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            RETURNING id
         `, [dateKey, finalUserId, timeSlot, type, description || '', totalPages || '0', pagesDone || '0', timestamp || new Date().toISOString()]);
 
-        res.json({ status: 'saved' });
+        // Audit Log - CREATE
+        const newData = {
+            id: result.rows[0].id,
+            userId: finalUserId,
+            dateKey,
+            timeSlot,
+            type,
+            description,
+            pagesDone
+        };
+        await logActivityHistory(finalUserId, 'CREATE', editedBy, dateKey, timeSlot, null, newData, req);
+
+        res.json({ status: 'saved', id: result.rows[0].id });
     } catch (err) {
         console.error('Save activity error:', err);
         res.status(500).json({ error: err.message });
     }
 });
 
+// Update individual activity
+app.put('/api/activities/individual', async (req, res) => {
+    const { id, type, description, totalPages, pagesDone, startPage, endPage, editedBy } = req.body;
+
+    if (!id) {
+        return res.status(400).json({ error: 'Activity ID is required' });
+    }
+
+    try {
+        // Get old data for audit
+        const oldDataResult = await query('SELECT * FROM activities WHERE id = $1', [id]);
+        if (oldDataResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Activity not found' });
+        }
+        const oldData = oldDataResult.rows[0];
+
+        // Update
+        await query(`
+            UPDATE activities 
+            SET type = $1, description = $2, totalPages = $3, pagesDone = $4
+            WHERE id = $5
+        `, [type, description, totalPages, pagesDone, id]);
+
+        // Audit Log - UPDATE
+        const newData = { id, type, description, totalPages, pagesDone, startPage, endPage };
+        await logActivityHistory(oldData.userid, 'UPDATE', editedBy, oldData.datekey, oldData.timeslot, oldData, newData, req);
+
+        res.json({ message: 'Activity updated successfully' });
+    } catch (err) {
+        console.error('PUT /api/activities/individual Error:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Delete individual activity by index
 app.delete('/api/activities/individual', async (req, res) => {
-    const { dateKey, userId, employeeId, timeSlot, activityIndex } = req.body;
+    const { dateKey, userId, employeeId, timeSlot, activityIndex, editedBy } = req.body;
     const finalUserId = userId || employeeId;
 
     console.log('🗑️  DELETE Individual Activity Request:', { dateKey, userId, employeeId, finalUserId, timeSlot, activityIndex });
@@ -511,7 +558,7 @@ app.delete('/api/activities/individual', async (req, res) => {
     try {
         // Get all activities for this slot
         const activities = await query(`
-            SELECT id FROM activities 
+            SELECT * FROM activities 
             WHERE dateKey = $1 AND userId = $2 AND timeSlot = $3
             ORDER BY id
         `, [dateKey, finalUserId, timeSlot]);
@@ -524,11 +571,16 @@ app.delete('/api/activities/individual', async (req, res) => {
             return res.status(400).json({ error: 'Invalid activity index' });
         }
 
-        // Delete the specific activity by its ID
+        // Get the specific activity to delete
         const activityToDelete = activities.rows[activityIndex];
+
+        // Delete the specific activity by its ID
         const result = await query(`
             DELETE FROM activities WHERE id = $1
         `, [activityToDelete.id]);
+
+        // Audit Log - DELETE
+        await logActivityHistory(finalUserId, 'DELETE', editedBy, dateKey, timeSlot, activityToDelete, null, req);
 
         console.log(`✅ Deleted activity ID ${activityToDelete.id} (index ${activityIndex}) for user ${finalUserId}, slot ${timeSlot}`);
         res.json({ message: 'Activity deleted', deletedId: activityToDelete.id });
@@ -539,7 +591,7 @@ app.delete('/api/activities/individual', async (req, res) => {
 });
 
 app.delete('/api/activities', async (req, res) => {
-    const { dateKey, userId, employeeId, timeSlot } = req.body;
+    const { dateKey, userId, employeeId, timeSlot, editedBy } = req.body;
     const finalUserId = userId || employeeId;
 
     console.log('🗑️  DELETE Request:', { dateKey, userId, employeeId, finalUserId, timeSlot });
@@ -553,10 +605,24 @@ app.delete('/api/activities', async (req, res) => {
     }
 
     try {
+        // Fetch old data for audit log
+        const oldRows = await query(`
+            SELECT * FROM activities 
+            WHERE dateKey = $1 AND userId = $2 AND timeSlot = $3
+        `, [dateKey, finalUserId, timeSlot]);
+
+        // Delete activities
         const result = await query(`
             DELETE FROM activities 
             WHERE dateKey = $1 AND userId = $2 AND timeSlot = $3
         `, [dateKey, finalUserId, timeSlot]);
+
+        // Audit Log - DELETE for each activity
+        if (oldRows.rows.length > 0) {
+            for (const row of oldRows.rows) {
+                await logActivityHistory(finalUserId, 'DELETE', editedBy, dateKey, timeSlot, row, null, req);
+            }
+        }
 
         console.log(`✅ Deleted ${result.rowCount} activities for user ${finalUserId}, slot ${timeSlot}`);
         res.json({ message: 'Activity cleared', deletedCount: result.rowCount });

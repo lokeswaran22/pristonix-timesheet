@@ -10,7 +10,22 @@ const nodemailer = require('nodemailer');
 
 const app = express();
 const port = process.env.PORT || 3000;
-const dbPath = path.resolve(__dirname, '../database/timesheet.db');
+
+// Enhanced database path handling for deployment
+const fs = require('fs');
+const dbDir = process.env.DB_PATH || path.resolve(__dirname, '../database');
+const dbPath = path.join(dbDir, 'timesheet.db');
+
+// Ensure database directory exists (critical for deployment)
+if (!fs.existsSync(dbDir)) {
+    console.log(`📁 Creating database directory: ${dbDir}`);
+    fs.mkdirSync(dbDir, { recursive: true });
+}
+
+console.log(`🗄️  Database path: ${dbPath}`);
+console.log(`📂 Database directory: ${dbDir}`);
+console.log(`✅ Directory exists: ${fs.existsSync(dbDir)}`);
+console.log(`✅ Directory writable: ${fs.accessSync(dbDir, fs.constants.W_OK) === undefined}`);
 
 // Middleware
 app.use(cors());
@@ -18,9 +33,13 @@ app.use(express.json());
 // Static files will be served AFTER API routes to prevent conflicts
 
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('Error opening database:', err.message);
-    else {
-        console.log('Connected to SQLite database.');
+    if (err) {
+        console.error('❌ Error opening database:', err.message);
+        console.error('Database path attempted:', dbPath);
+        console.error('Please check file permissions and path');
+    } else {
+        console.log('✅ Connected to SQLite database.');
+        console.log(`📍 Database location: ${dbPath}`);
         initDb();
     }
 });
@@ -53,9 +72,15 @@ function all(sql, params = []) {
     });
 }
 
-// Audit Log Helper
+// Audit Log Helper - Enhanced for deployment debugging
 async function logActivityHistory(userId, actionType, actionBy, dateKey, timeSlot, oldData, newData, req) {
     try {
+        // Check if database is ready
+        if (!db) {
+            console.error('❌ AUDIT LOG FAILED: Database not initialized');
+            return;
+        }
+
         const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
         const userAgent = req.headers['user-agent'];
 
@@ -77,10 +102,10 @@ async function logActivityHistory(userId, actionType, actionBy, dateKey, timeSlo
                 actionByName = userName; // Self action
             }
         } catch (dbErr) {
-            console.warn('Failed to resolve names for audit log:', dbErr.message);
+            console.warn('⚠️  Failed to resolve names for audit log:', dbErr.message);
         }
 
-        await run(`
+        const result = await run(`
             INSERT INTO activity_history 
             (activity_id, user_id, action_type, action_by, old_data, new_data, date_key, time_slot, ip_address, user_agent, user_name, action_by_name)
             VALUES (NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -97,9 +122,16 @@ async function logActivityHistory(userId, actionType, actionBy, dateKey, timeSlo
             userName,
             actionByName
         ]);
-        console.log(`Audit Logged: ${actionType} | User: ${userName} | Slot: ${timeSlot}`);
+
+        console.log(`✅ Audit Logged [ID: ${result.lastID}]: ${actionType} | User: ${userName} | Slot: ${timeSlot}`);
     } catch (e) {
-        console.error('Audit Log Error:', e);
+        console.error('❌ AUDIT LOG ERROR:', e.message);
+        console.error('   Action Type:', actionType);
+        console.error('   User ID:', userId);
+        console.error('   Date Key:', dateKey);
+        console.error('   Time Slot:', timeSlot);
+        console.error('   Stack:', e.stack);
+        // Don't throw - audit failure shouldn't break the main operation
     }
 }
 
