@@ -1,0 +1,108 @@
+/* Timeslot Reminder System */
+
+/* Past slot - time period ended */
+.timeslot-row.past-slot .timeslot-activity.empty {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%) !important;
+    border-left: 4px solid #ef4444;
+    animation: pulse-warning 2s ease-in-out infinite;
+}
+
+/* Empty slot warning - only show when truly empty */
+.timeslot-activity.empty:not(:has(.activity-content)) {
+    background: #fef3c7;
+    border: 2px dashed #f59e0b;
+    position: relative;
+    min-height: 40px;
+}
+
+/* Removed overlay text - just use background color to indicate empty slot */
+
+/* Pulse animation for unfilled past slots */
+@keyframes pulse-warning {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(239, 68, 68, 0);
+    }
+}
+
+/* Current slot highlight */
+.timeslot-row.current-slot {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border-left: 4px solid #3b82f6;
+    animation: glow-current 3s ease-in-out infinite;
+}
+
+@keyframes glow-current {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
+    }
+}
+
+/* Reminder notification badge */
+.reminder-badge {
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 16px rgba(239, 68, 68, 0.3);
+    font-weight: 600;
+    font-size: 0.875rem;
+    z-index: 9999;
+    animation: slide-in-right 0.5s ease-out, pulse-badge 2s ease-in-out infinite 1s;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.reminder-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(239, 68, 68, 0.4);
+}
+
+@keyframes slide-in-right {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-badge {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.reminder-count {
+    background: white;
+    color: #ef4444;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.75rem;
+}

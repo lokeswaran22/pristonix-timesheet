@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pristonix | Timesheet</title>
+    <meta name="description" content="Pristonix employee timesheet tracking system">
+
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#1e3a8a">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Timesheet">
+    <link rel="manifest" href="manifest.json">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="images/logogo.jpg">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/modal-styles.css">
+    <link rel="stylesheet" href="css/reminder.css">
+
+    <link rel="stylesheet" href="css/clock-styles.css">
+    <link rel="stylesheet" href="css/modal-zindex.css">
+    <link rel="stylesheet" href="css/activity-badges.css">
+    <link rel="stylesheet" href="css/timeslot-reminders.css">
+    <link rel="stylesheet" href="css/activity-badges.css">
+    <link rel="stylesheet" href="css/timeslot-reminders.css">
+    <link rel="stylesheet" href="css/lunch-break.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
+
+<body>
+    <!-- Preloader Removed -->
+
+    <!-- Reminder Notification Container -->
+    <div id="reminderContainer"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="images/full_logo.png" alt="Pristonix" class="full-logo">
+                </div>
+                <div class="header-actions">
+                    <div id="digitalClock" class="digital-clock"></div>
+
+                    <!-- User Profile Dropdown -->
+                    <div class="user-profile-dropdown" id="userProfileDropdown">
+                        <button class="profile-trigger" id="profileTrigger">
+                            <div class="avatar-circle">
+                                <span id="avatarInitial">U</span>
+                            </div>
+                            <span id="userInfoDisplay">Loading...</span>
+                            <svg class="chevron-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Global Floating Dropdown Menu (Moved out of header to escape clipping) -->
+    <div class="dropdown-menu" id="profileMenu">
+        <div class="dropdown-header">
+            <span id="dropdownUserName" class="dropdown-user-name">User Name</span>
+            <span id="dropdownUserRole" class="dropdown-user-role">Role</span>
+        </div>
+        <div class="dropdown-divider"></div>
+
+        <button class="dropdown-item" id="adminPanelToggleBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                </svg></span>
+            Admin Panel
+        </button>
+
+        <button class="dropdown-item" id="addEmployeeBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                    <circle cx="8.5" cy="7" r="4" />
+                    <line x1="20" y1="8" x2="20" y2="14" />
+                    <line x1="23" y1="11" x2="17" y2="11" />
+                </svg></span>
+            Add Employee
+        </button>
+
+        <button class="dropdown-item" id="checkMissingBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                </svg></span>
+            Reminders
+        </button>
+
+        <button class="dropdown-item" id="exportPdfBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                </svg></span>
+            Export PDF
+        </button>
+
+
+
+        <div class="dropdown-divider"></div>
+
+        <button class="dropdown-item logout-item" id="logoutBtn">
+            <span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                </svg></span>
+            Logout
+        </button>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+
+
+            <!-- Date Selector and Timesheet -->
+            <div class="date-selector-card">
+                <div class="date-selector">
+                    <h2>Daily Timesheet</h2>
+                    <div class="date-controls">
+                        <button class="btn btn-sm btn-secondary" id="prevDay">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M15 18l-6-6 6-6" />
+                            </svg>
+                        </button>
+                        <button class="btn btn-sm btn-secondary" id="todayBtn">Today</button>
+                        <input type="date" id="dateInput" class="date-input">
+                        <button class="btn btn-sm btn-secondary" id="nextDay">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path d="M9 18l6-6-6-6" />
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Timesheet Table -->
+                <div class="timesheet-container">
+                    <div class="table-wrapper">
+                        <table class="timesheet-table">
+                            <thead>
+                                <tr>
+                                    <th rowspan="2">Employee Name</th>
+                                    <th colspan="3" style="text-align: center;">Total Pages</th>
+                                    <th rowspan="2">9:00-10:00</th>
+                                    <th rowspan="2">10:00-11:00</th>
+                                    <th rowspan="2">11:00-11:10</th>
+                                    <th rowspan="2">11:10-12:00</th>
+                                    <th rowspan="2">12:00-01:00</th>
+                                    <th rowspan="2">01:00-01:40</th>
+                                    <th rowspan="2">01:40-03:00</th>
+                                    <th rowspan="2">03:00-03:50</th>
+                                    <th rowspan="2">03:50-04:00</th>
+                                    <th rowspan="2">04:00-05:00</th>
+                                    <th rowspan="2">05:00-06:00</th>
+                                    <th rowspan="2">Actions</th>
+                                </tr>
+                                <tr>
+                                    <th>Proof</th>
+                                    <th>Epub</th>
+                                    <th>Calibr</th>
+                                </tr>
+                            </thead>
+                            <tbody id="timesheetBody">
+                                <!-- Rows will be dynamically generated -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Employee Vertical Timesheet (Employee View Only) -->
+                    <div class="employee-vertical-container" id="employeeVerticalContainer">
+                        <div class="employee-vertical-timesheet" id="employeeVerticalTimesheet">
+                            <!-- Dynamically generated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="empty-state" id="emptyState" style="display: none;">
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                        <circle cx="60" cy="60" r="50" stroke="url(#empty-gradient)" stroke-width="4" opacity="0.3" />
+                        <path d="M60 30v30l20 20" stroke="url(#empty-gradient)" stroke-width="4"
+                            stroke-linecap="round" />
+                        <defs>
+                            <linearGradient id="empty-gradient" x1="0" y1="0" x2="120" y2="120">
+                                <stop offset="0%" stop-color="#d4af37" />
+                                <stop offset="100%" stop-color="#1e3a8a" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <h3>No Employees Added Yet</h3>
+                    <p>Click "Add Employee" to start tracking activities</p>
+                </div>
+            </div>
+
+
+            <!-- Activity Tracker - Separate Section (Restored & restricted to Admin) -->
+            <div class="activity-tracker-card" id="adminAnalyticsSection" style="display: none;">
+                <div class="activity-tracker-header">
+                    <div class="activity-tracker-title">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 20h9"></path>
+                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z">
+                            </path>
+                        </svg>
+                        <h3 id="recentChangesHeader">Recent Changes</h3>
+                    </div>
+                </div>
+                <div class="activity-tracker-list" id="activityTrackerList">
+                    <!-- Tracker items will be injected here -->
+                </div>
+            </div>
+
+            <script>
+                // Show Recent Changes only for Admin
+                document.addEventListener('DOMContentLoaded', () => {
+                    try {
+                        const user = JSON.parse(localStorage.getItem('currentUser'));
+                        if (user && user.role === 'admin') {
+                            const section = document.getElementById('adminAnalyticsSection');
+                            if (section) section.style.display = 'block';
+                        }
+                    } catch (e) { console.error("Error checking admin role for analytics", e); }
+                });
+            </script>
+        </div>
+    </main>
+
+    <!-- Scripts for Admin Panel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/analytics-styles.css">
+    <link rel="stylesheet" href="css/activity-tracker.css">
+    <link rel="stylesheet" href="css/overflow-fix.css">
+    <script src="js/history.js?v=5"></script>
+
+    <!-- Add/Edit Employee Modal -->
+    <div class="modal" id="employeeModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="employeeModalTitle">Add Employee</h3>
+                <button class="modal-close" id="closeModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="employeeForm">
+                    <div class="form-group">
+                        <label for="employeeName">Employee Name</label>
+                        <input type="text" id="employeeName" name="employeeName" class="form-input"
+                            placeholder="Enter employee name" autocomplete="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeUsername">Username (for login)</label>
+                        <input type="text" id="employeeUsername" name="employeeUsername" class="form-input"
+                            placeholder="Enter username" autocomplete="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeePassword">Password (for login)</label>
+                        <div style="position: relative;">
+                            <input type="text" id="employeePassword" name="employeePassword" class="form-input"
+                                placeholder="Enter password" autocomplete="new-password" style="padding-right: 45px;">
+                            <button type="button" id="togglePasswordBtn" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+                                background: none; border: none; cursor: pointer; padding: 5px; color: #64748b; 
+                                font-size: 18px;" title="Hide Password">
+                                🙈
+                            </button>
+                        </div>
+                        <small id="passwordHint"
+                            style="color: #10b981; font-size: 0.85rem; display: none; margin-top: 4px;">
+                            ✓ Password is set. Leave blank to keep current, or enter new password to change.
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeEmail">Email Address</label>
+                        <input type="email" id="employeeEmail" name="employeeEmail" class="form-input"
+                            placeholder="Enter email address" autocomplete="email">
+                        <small style="color: #64748b; font-size: 0.85rem; margin-top: 4px;">
+                            Email is used for password recovery and notifications
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="employeeRole">Role</label>
+                        <select id="employeeRole" name="employeeRole" class="form-input">
+                            <option value="employee">Employee</option>
+                            <option value="admin">Admin</option>
+                            <option value="guest">Guest</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Employee</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Modal -->
+    <div class="modal" id="activityModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="activityModalTitle">Add Activity</h3>
+                <button class="modal-close" id="closeActivityModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p id="activityTimeSlotDisplay"
+                    style="margin-bottom: 1rem; color: var(--primary-blue); font-weight: 600; text-align: center;">
+                </p>
+                <form id="activityForm">
+                    <input type="hidden" id="activityEmployeeId">
+                    <input type="hidden" id="activityTimeSlot">
+
+                    <!-- Time Range for Partial Slots -->
+                    <div class="form-group">
+                        <span style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Time Range
+                            (Optional -
+                            for partial slots like meetings)</span>
+                        <div style="display: flex; gap: 1rem; align-items: center;">
+                            <input type="time" id="activityStartTime" class="form-input" placeholder="Start">
+                            <span>to</span>
+                            <input type="time" id="activityEndTime" class="form-input" placeholder="End">
+                        </div>
+                        <small style="color: var(--text-muted); font-size: 0.8rem;">Leave empty to use full
+                            timeslot</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityType">Activity Type</label>
+                        <select id="activityType" class="form-input" required>
+                            <option value="">Select Activity</option>
+                            <option value="epub">Epub Process</option>
+                            <option value="proof">Proof Reading</option>
+                            <option value="calibr">Calibr Process</option>
+                            <option value="meeting">Meeting</option>
+                            <option value="break">Break</option>
+                            <option value="lunch">Lunch</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityDescription">Notes / Description</label>
+                        <textarea id="activityDescription" class="form-input" rows="3"
+                            placeholder="Add notes about this activity..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="activityIssues">Issues (Optional)</label>
+                        <textarea id="activityIssues" class="form-input" rows="2"
+                            placeholder="Any issues faced?"></textarea>
+                    </div>
+
+                    <!-- Page Range - Always Visible for Work Activities -->
+                    <div class="form-group" id="pageRangeGroup">
+                        <span style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Page Range
+                            (for
+                            Epub/Proof/Calibr)</span>
+                        <div style="display: flex; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <label for="startPage">Start Page</label>
+                                <input type="number" id="startPage" class="form-input" placeholder="Start" min="1">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="endPage">End Page</label>
+                                <input type="number" id="endPage" class="form-input" placeholder="End" min="1">
+                            </div>
+                            <div style="flex: 1;">
+                                <label for="calculatedTotal">Total Pages</label>
+                                <input type="number" id="calculatedTotal" class="form-input" readonly
+                                    style="background: #f1f5f9; font-weight: 600; color: var(--primary-blue);"
+                                    value="0">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions" style="justify-content: space-between;">
+                        <button type="button" class="btn btn-secondary" id="cancelActivityBtn">Cancel</button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button type="submit" class="btn btn-primary">Save Activity</button>
+                            <button type="button" class="btn" id="addAnotherBtn"
+                                style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">Save
+                                & Add Another</button>
+                            <button type="button" class="btn btn-danger" id="deleteActivityBtn"
+                                style="background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none;">Delete</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal (General) -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-header"
+                style="justify-content: center; border-bottom: none; padding: 1.5rem 1.5rem 0.5rem 1.5rem;">
+                <h3 id="confirmModalTitle" style="font-size: 1.25rem; color: var(--neutral-900);">Delete
+                    Employee?</h3>
+            </div>
+            <div class="modal-body" style="padding: 0 1.5rem 1.5rem 1.5rem;">
+                <p id="confirmModalMessage" style="margin-bottom: 1.5rem; color: var(--neutral-600);">Are
+                    you sure you
+                    want to delete this employee? This action cannot be undone.</p>
+                <div class="form-actions"
+                    style="justify-content: center; border-top: none; padding-top: 0; margin-top: 0; gap: 1rem;">
+                    <button type="button" class="btn btn-secondary" id="confirmCancelBtn"
+                        style="min-width: 100px;">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmOkBtn"
+                        style="min-width: 100px;">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal (Premium) -->
+    <div class="modal" id="logoutConfirmModal">
+        <div class="modal-content" style="max-width: 420px; text-align: center; overflow: hidden;">
+            <div class="modal-body" style="padding: 2.5rem 2rem;">
+                <div style="margin-bottom: 1.5rem;">
+                    <div
+                        style="width: 80px; height: 80px; background: rgba(239, 68, 68, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto; margin-bottom: 1.5rem; border: 2px dashed rgba(239, 68, 68, 0.2);">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                            <polyline points="16 17 21 12 16 7" />
+                            <line x1="21" y1="12" x2="9" y2="12" />
+                        </svg>
+                    </div>
+                </div>
+                <h3
+                    style="font-family: 'Playfair Display', serif; font-size: 1.75rem; color: #0f172a; margin-bottom: 1rem;">
+                    Ready to Leave?</h3>
+                <p style="color: #64748b; font-size: 1.05rem; line-height: 1.6; margin-bottom: 2rem;">Are you sure you
+                    want to logout from your session? You will need to login again to access your timesheet.</p>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="button" class="btn btn-secondary" id="cancelLogoutBtn"
+                        style="flex: 1; padding: 0.875rem; border-radius: 12px; font-weight: 600;">Stay Logged
+                        In</button>
+                    <button type="button" class="btn btn-danger" id="confirmLogoutBtn"
+                        style="flex: 1; padding: 0.875rem; border-radius: 12px; font-weight: 600; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); border: none;">Yes,
+                        Logout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Employee Action Modal (Leave/Permission) -->
+    <div class="modal" id="employeeActionModal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>Employee Options</h3>
+                <button class="modal-close" id="closeEmployeeActionModal">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="actionEmployeeId">
+                <h4 id="actionEmployeeName"
+                    style="margin-bottom: 1rem; color: var(--primary-blue); text-align: center;"></h4>
+                <p id="employeeActionTitle"
+                    style="margin-bottom: 1.5rem; color: var(--text-secondary); font-weight: 600;">
+                    Select an action:</p>
+
+                <!-- Action Buttons - RESTORED -->
+                <div id="actionButtons" class="form-actions"
+                    style="flex-direction: column; gap: 1rem; border-top: none; padding-top: 0; margin-top: 0;">
+                    <button class="btn" id="markLeaveOptionBtn"
+                        style="width: 100%; justify-content: center; background: var(--activity-leave); color: white; border: none; padding: 12px; font-size: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth="2" style="margin-right: 8px;">
+                            <path
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Mark Leave
+                    </button>
+                    <button class="btn" id="markPermissionOptionBtn"
+                        style="width: 100%; justify-content: center; background: var(--activity-meeting); color: white; border: none; padding: 12px; font-size: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth="2" style="margin-right: 8px;">
+                            <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Mark Permission
+                    </button>
+                    <button class="btn" id="addHolidayOptionBtn"
+                        style="width: 100%; justify-content: center; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; padding: 12px; font-size: 1rem;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth="2" style="margin-right: 8px;">
+                            <path d="M12 4v16m8-8H4" />
+                        </svg>
+                        Add Holiday
+                    </button>
+                </div>
+
+                <!-- Time Selection Form (Hidden by default) -->
+                <div id="timeSelectionForm" style="display: none;">
+                    <h4 id="timeSelectionTitle" style="margin-bottom: 1rem; color: var(--royal-navy);">
+                        Select
+                        Time Range
+                    </h4>
+
+                    <div class="form-group" id="fullDayGroup">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                            <input type="checkbox" id="fullDayCheck" style="width: 18px; height: 18px;">
+                            Full Day Leave
+                        </label>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startSlot">From</label>
+                        <select id="startSlot" class="form-input">
+                            <!-- Options populated by JS -->
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endSlot">To</label>
+                        <select id="endSlot" class="form-input">
+                            <!-- Options populated by JS -->
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="permissionReasonGroup" style="display: none;">
+                        <label for="permissionReason">Reason</label>
+                        <textarea id="permissionReason" class="form-input" rows="3"
+                            placeholder="Enter reason for permission..."></textarea>
+                    </div>
+
+                    <div class="form-actions" style="justify-content: space-between;">
+                        <button type="button" class="btn btn-secondary" id="backToActionsBtn">Back</button>
+                        <button type="button" class="btn btn-primary" id="confirmActionBtn">Submit</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <div id="logoutOverlay" class="logout-overlay">
+        <div class="logout-message">You’ve been logged out 👋🏼</div>
+        <div class="logout-sub">Take care!</div>
+    </div>
+
+    <script src="js/date-utils.js"></script>
+    <script src="js/auth-check.js?v=5"></script>
+    <script src="js/simple-modals.js?v=5"></script>
+    <script src="js/script.js?v=5"></script>
+    <script src="js/diagnostic.js?v=5"></script>
+
+    <script src="js/reminder.js?v=5"></script>
+    <footer class="footer">
+        <p>
+            <a href="https://pristonix.com" class="footer-brand" target="_blank">Pristonix</a> &copy; 2025 - All
+            Rights
+            Reserved.
+        </p>
+        <p>
+            Designed by <a href="https://trojanx.in" class="footer-design" target="_blank"><b>Trojan
+                    <span>x</span></b></a>
+        </p>
+    </footer>
+
+    <!-- PWA Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then((registration) => {
+                        console.log('ServiceWorker registered:', registration.scope);
+                    })
+                    .catch((error) => {
+                        console.log('ServiceWorker registration failed:', error);
+                    });
+            });
+        }
+    </script>
+</body>
+
+</html>
