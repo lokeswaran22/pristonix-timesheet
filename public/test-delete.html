@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Delete Button Test</title>
+</head>
+
+<body>
+    <h1>Delete Button Test</h1>
+    <button id="testDeleteBtn"
+        style="padding: 10px 20px; background: red; color: white; border: none; cursor: pointer;">
+        Test Delete Button
+    </button>
+    <div id="output" style="margin-top: 20px; padding: 10px; background: #f0f0f0;"></div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        // Simulate the TimesheetManager
+        const manager = {
+            editingActivityKey: { userId: 1, timeSlot: '9:00-10:00' },
+            currentUser: { id: 1, role: 'employee' },
+
+            async clearActivity(userId, timeSlot) {
+                output.innerHTML += `<p>clearActivity called with userId=${userId}, timeSlot=${timeSlot}</p>`;
+
+                try {
+                    const res = await fetch('/api/activities', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            dateKey: '2025-12-12',
+                            userId: parseInt(userId),
+                            timeSlot
+                        })
+                    });
+
+                    output.innerHTML += `<p>Response status: ${res.status}</p>`;
+
+                    if (res.ok) {
+                        const result = await res.json();
+                        output.innerHTML += `<p style="color: green;">SUCCESS: ${JSON.stringify(result)}</p>`;
+                    } else {
+                        const error = await res.json();
+                        output.innerHTML += `<p style="color: red;">ERROR: ${JSON.stringify(error)}</p>`;
+                    }
+                } catch (e) {
+                    output.innerHTML += `<p style="color: red;">EXCEPTION: ${e.message}</p>`;
+                }
+            }
+        };
+
+        document.getElementById('testDeleteBtn').addEventListener('click', async () => {
+            output.innerHTML = '<p><strong>Button clicked!</strong></p>';
+
+            const userId = manager.editingActivityKey?.userId || manager.currentUser?.id;
+            const timeSlot = manager.editingActivityKey?.timeSlot;
+
+            output.innerHTML += `<p>userId: ${userId}, timeSlot: ${timeSlot}</p>`;
+
+            if (!userId || !timeSlot) {
+                output.innerHTML += '<p style="color: red;">Missing userId or timeSlot!</p>';
+                return;
+            }
+
+            if (confirm(`Delete all activities for ${timeSlot}?`)) {
+                await manager.clearActivity(userId, timeSlot);
+            } else {
+                output.innerHTML += '<p>User cancelled</p>';
+            }
+        });
+
+        output.innerHTML = '<p>Test page loaded. Click the button to test delete functionality.</p>';
+    </script>
+</body>
+
+</html>
