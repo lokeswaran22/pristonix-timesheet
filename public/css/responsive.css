@@ -1,0 +1,315 @@
+/* ==========================================
+   RESPONSIVE DESIGN SYSTEM
+   ========================================== */
+
+/* Tablet & Smaller Laptops (Max Width 1024px) */
+@media screen and (max-width: 1024px) {
+    .container {
+        padding: 0 var(--space-4);
+    }
+
+    .header-content {
+        padding: 0 var(--space-2);
+    }
+
+    /* Adjust Date Selector for Tablets */
+    .date-selector {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .date-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .date-input {
+        flex-grow: 1;
+    }
+}
+
+/* Mobile Devices (Max Width 768px) */
+@media screen and (max-width: 768px) {
+
+    /* --- GLOBAL LAYOUT FIXES --- */
+    :root {
+        --space-6: 1rem;
+        --space-8: 1.5rem;
+        --space-12: 2rem;
+    }
+
+    .container {
+        padding: 0 1rem;
+    }
+
+    .main-content,
+    .history-container {
+        padding-top: 180px !important;
+        /* Increased for taller stacked header */
+        padding-bottom: 80px;
+    }
+
+    /* --- HEADER --- */
+    .header {
+        border-bottom: none !important;
+        /* Remove border for cleaner look */
+        box-shadow: none !important;
+        /* Remove shadow to match flat look */
+    }
+
+    .header-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.5rem 0 0.5rem 0;
+        /* Adjusted to match screenshot spacing */
+        gap: 0.5rem;
+    }
+
+    .logo {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 0.5rem;
+    }
+
+    .logo img {
+        height: 36px;
+        /* Slightly adjusted for mobile */
+        width: auto;
+    }
+
+    /* .logo-text removed */
+
+    /* Header Actions Container */
+    .header-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    /* User Profile - Order 1 */
+    .user-profile-dropdown {
+        order: 1;
+        margin-left: 0;
+        width: auto;
+        display: flex;
+        justify-content: center;
+        background: transparent;
+        padding: 0;
+    }
+
+    .profile-trigger {
+        display: flex;
+        align-items: center;
+        background: #f1f5f9;
+        /* Lighter background */
+        border: 1px solid #e2e8f0;
+        border-radius: 50px;
+        padding: 8px 20px;
+        /* Larger pill */
+    }
+
+    #userInfoDisplay {
+        display: inline-block !important;
+        font-size: 0.95rem;
+        /* Crisper font size */
+        color: #1e3a8a;
+        font-weight: 600;
+        margin: 0 8px;
+    }
+
+    /* Clock - Order 2 */
+    .digital-clock {
+        display: flex !important;
+        order: 2;
+        width: fit-content;
+        min-width: 140px;
+        margin: 0 auto 0.5rem auto;
+        justify-content: center;
+        background: #f8fafc;
+        /* Very light background */
+        color: #1e3a8a;
+        padding: 6px 20px;
+        border-radius: 50px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        border: 1px solid #e2e8f0;
+        box-shadow: none;
+        /* Flat look */
+    }
+
+    /* --- DASHBOARD (INDEX) --- */
+    /* Refined Mobile Date Selector */
+    .date-selector-card {
+        padding: 1.25rem !important;
+        border-radius: 20px;
+        /* More rounded */
+        margin-top: 1rem;
+        /* Reduced gap - header is close in screenshot */
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .date-selector {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 1.25rem;
+        /* More space between title and input */
+        margin-bottom: 1.5rem;
+    }
+
+    .date-selector h2 {
+        font-size: 1.35rem;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        color: #0f172a;
+        /* Dark text */
+        font-weight: 700;
+    }
+
+    .date-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        width: 100%;
+    }
+
+    /* Force Date Input to Top Full Width */
+    .date-input {
+        order: 1;
+        width: 100%;
+        flex: 0 0 100%;
+        height: 48px;
+        /* Taller touch target */
+        border-radius: 12px;
+        border: 1px solid #cbd5e1;
+        background: #f8fafc;
+        font-size: 1rem;
+        padding: 0 16px;
+        color: #334155;
+    }
+
+    /* Buttons Below */
+    .date-controls button {
+        order: 2;
+        flex: 1;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+        border: 1px solid #cbd5e1;
+        font-weight: 600;
+        color: #334155;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        /* Subtle shadow */
+    }
+
+    #todayBtn {
+        flex: 2;
+        background: #f1f5f9;
+        color: #1e3a8a;
+        font-weight: 700;
+    }
+
+    /* Fix Timesheet Table Overflow */
+    .table-wrapper {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+    }
+
+    .timesheet-table {
+        min-width: 800px;
+        /* Force minimum width to trigger scroll */
+    }
+
+    /* --- HISTORY PAGE --- */
+    /* Fix Filter Card Overflows */
+    .filters-grid {
+        grid-template-columns: 1fr;
+        /* Stack all filters vertically */
+        gap: 1rem;
+    }
+
+    .form-group {
+        width: 100%;
+    }
+
+    /* Action Buttons in History Filters */
+    .filters-grid .form-group:last-child {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .filters-grid button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+
+    /* History Table Mobile Fix */
+    .data-table-card .table-responsive {
+        margin: 0 -1.5rem;
+        /* Extend to edges inside card */
+        width: calc(100% + 3rem);
+        border-radius: 0;
+    }
+
+    .master-table {
+        min-width: 600px;
+        /* Force scroll */
+    }
+
+    .master-table th,
+    .master-table td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    /* --- MODALS --- */
+    .modal-content {
+        width: 95% !important;
+        margin: 1rem;
+        padding: 1.5rem;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+
+    .pin-card {
+        padding: 2rem 1.5rem;
+        width: 90%;
+    }
+
+    .pin-input-group {
+        gap: 0.5rem;
+    }
+
+    .pin-digit {
+        width: 40px;
+        height: 50px;
+        font-size: 1.25rem;
+    }
+}
+
+/* Very Small Mobile (Max Width 380px) */
+@media screen and (max-width: 380px) {
+
+
+    .header-content {
+        padding: 0.5rem 0;
+    }
+
+    .main-content {
+        padding-top: 130px !important;
+    }
+}
+
+
+
+/* Mobile Devices (Max Width 768px) */

@@ -1,0 +1,37 @@
+{
+    "name": "Pristonix Timesheet Manager",
+    "short_name": "Timesheet",
+    "description": "Professional timesheet and activity tracking application",
+    "start_url": "./",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#1e3a8a",
+    "theme_color": "#1e3a8a",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "images/logogo.jpg",
+            "sizes": "661x377",
+            "type": "image/jpeg",
+            "purpose": "any"
+        },
+        {
+            "src": "images/logogo.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "images/logogo.jpg",
+            "sizes": "661x377",
+            "type": "image/jpeg",
+            "form_factor": "wide"
+        }
+    ],
+    "categories": [
+        "productivity",
+        "business"
+    ]
+}

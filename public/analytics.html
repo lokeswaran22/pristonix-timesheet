@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard | Pristonix</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="icon" type="image/jpeg" href="images/logogo.jpg">
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .analytics-container {
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.1);
+            border-color: #d4af37;
+        }
+
+        .stat-title {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--royal-navy);
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1000px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--border-color);
+            min-height: 400px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <img src="images/full_logo.png" alt="Pristonix" class="full-logo">
+                </div>
+                <div class="header-actions">
+                    <input type="date" id="analyticsDate" class="form-input" style="width: auto;">
+                    <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="analytics-container">
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-title">Total Employees</span>
+                <span class="stat-value" id="statEmployees">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Tasks Completed</span>
+                <span class="stat-value" id="statTasks">-</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-title">Total Pages Processed</span>
+                <span class="stat-value" id="statPages">-</span>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Productivity by Employee</h3>
+                </div>
+                <canvas id="employeeChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3>Task Distribution</h3>
+                </div>
+                <div style="height: 300px; display: flex; justify-content: center;">
+                    <canvas id="typeChart"></canvas>
+                </div>
+            </div>
+            <div class="chart-card" style="grid-column: 1 / -1;">
+                <div class="chart-header">
+                    <h3>Hourly Activity Volume</h3>
+                </div>
+                <canvas id="hourlyChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/date-utils.js"></script>
+    <script src="js/auth-check.js?v=2"></script>
+    <script>
+        // Init Date
+        const dateInput = document.getElementById('analyticsDate');
+        dateInput.valueAsDate = new Date(); // Default to today
+
+        let charts = {};
+
+        async function loadAnalytics() {
+            const date = dateInput.value;
+
+            try {
+                // Load Summary
+                const sumRes = await fetch(`/api/analytics/summary?date=${date}`);
+                const summary = await sumRes.json();
+
+                document.getElementById('statEmployees').textContent = summary.employees;
+                document.getElementById('statTasks').textContent = summary.activities;
+                document.getElementById('statPages').textContent = summary.totalPages;
+
+                // Load Charts
+                const chartRes = await fetch(`/api/analytics/charts?date=${date}`);
+                const data = await chartRes.json();
+
+                renderCharts(data);
+            } catch (err) {
+                console.error('Failed to load analytics', err);
+            }
+        }
+
+        function renderCharts(data) {
+            // Colors
+            const baseColor = '#1e3a8a';
+            const accentColor = '#d4af37';
+
+            // 1. Employee Bar Chart
+            if (charts.employee) charts.employee.destroy();
+            charts.employee = new Chart(document.getElementById('employeeChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.productivity.map(d => d.name),
+                    datasets: [{
+                        label: 'Pages Done',
+                        data: data.productivity.map(d => d.totalPages),
+                        backgroundColor: baseColor,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // 2. Type Pie Chart
+            if (charts.type) charts.type.destroy();
+            charts.type = new Chart(document.getElementById('typeChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: data.distribution.map(d => d.type),
+                    datasets: [{
+                        data: data.distribution.map(d => d.count),
+                        backgroundColor: [
+                            '#1e3a8a', '#d4af37', '#10b981', '#ef4444', '#f59e0b', '#6b7280'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // 3. Hourly Line Chart
+            if (charts.hourly) charts.hourly.destroy();
+            charts.hourly = new Chart(document.getElementById('hourlyChart'), {
+                type: 'line',
+                data: {
+                    labels: data.hourly.map(d => d.timeSlot),
+                    datasets: [{
+                        label: 'Activities',
+                        data: data.hourly.map(d => d.count),
+                        borderColor: accentColor,
+                        tension: 0.3,
+                        fill: true,
+                        backgroundColor: 'rgba(212, 175, 55, 0.1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        dateInput.addEventListener('change', loadAnalytics);
+
+        // Initial Load
+        loadAnalytics();
+    </script>
+</body>
+
+</html>
